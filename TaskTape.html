@@ -1,0 +1,1534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TaskTape — Your Week. Your Mixtape.</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap');
+
+  :root {
+    --bg: #0D1117;
+    --surface: #161B22;
+    --surface2: #1C2330;
+    --border: rgba(255,255,255,0.07);
+    --text: #E6EDF3;
+    --muted: #8B949E;
+    --monday: #8B5CF6;
+    --tuesday: #EC4899;
+    --wednesday: #F59E0B;
+    --thursday: #10B981;
+    --friday: #F97316;
+    --saturday: #3B82F6;
+    --sunday: #EF4444;
+    --accent: #8B5CF6;
+    --gold: #FFD700;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  
+  body {
+    font-family: 'Space Grotesk', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ===== LANDING PAGE ===== */
+  #landing {
+    position: fixed; inset: 0;
+    background: radial-gradient(ellipse at 50% 30%, #1a0a3d 0%, #0D1117 60%);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    z-index: 100;
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+  #landing.hidden { opacity: 0; pointer-events: none; transform: scale(1.05); }
+
+  .landing-logo {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 48px;
+  }
+  .logo-m {
+    width: 48px; height: 48px;
+    position: relative;
+  }
+  .logo-text {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px; font-weight: 800;
+    background: linear-gradient(135deg, #a855f7, #06b6d4);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+  }
+  .logo-sub {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px; color: var(--muted);
+    letter-spacing: 2px; text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  .hero-title {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(52px, 8vw, 96px);
+    font-weight: 800;
+    text-align: center;
+    line-height: 1;
+    margin-bottom: 20px;
+  }
+  .hero-title .line1 { 
+    background: linear-gradient(135deg, #fff 0%, #c084fc 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .hero-title .line2 {
+    background: linear-gradient(135deg, #c084fc 0%, #38bdf8 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .hero-sub {
+    font-size: 18px; color: var(--muted);
+    margin-bottom: 48px; text-align: center;
+    font-weight: 400;
+  }
+
+  /* Landing cassette shelf */
+  .landing-shelf {
+    display: flex; gap: 16px;
+    margin-bottom: 56px;
+    perspective: 800px;
+  }
+  .landing-tape {
+    width: 72px; height: 48px;
+    border-radius: 8px;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s ease;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 8px; font-weight: 700;
+    color: rgba(0,0,0,0.7);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .landing-tape::before {
+    content: '';
+    position: absolute;
+    width: 36px; height: 14px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 3px;
+    top: 50%; left: 50%; transform: translate(-50%,-50%);
+  }
+  .landing-tape::after {
+    content: '';
+    position: absolute;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.4);
+    border: 2px solid rgba(255,255,255,0.2);
+    top: 50%; left: 22%;
+    transform: translate(-50%,-50%);
+    box-shadow: 20px 0 0 rgba(0,0,0,0.4), 20px 0 0 1px rgba(255,255,255,0.1);
+  }
+  .landing-tape:hover {
+    transform: translateY(-12px) rotateX(5deg);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5), 0 0 30px var(--c);
+  }
+
+  .cta-btn {
+    padding: 16px 48px;
+    border-radius: 50px;
+    border: none;
+    background: linear-gradient(135deg, #8B5CF6, #6366f1);
+    color: #fff;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 16px; font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 32px rgba(139,92,246,0.4);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(139,92,246,0.6); }
+
+  /* ===== MAIN APP ===== */
+  #app { display: flex; height: 100vh; overflow: hidden; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 220px; min-width: 220px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    padding: 20px 0;
+    overflow-y: auto;
+  }
+  .sidebar-logo {
+    padding: 0 16px 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+  .sidebar-logo-text {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px; font-weight: 800;
+    background: linear-gradient(135deg, #a855f7, #06b6d4);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .sidebar-logo-tagline {
+    font-size: 10px; color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 1px;
+  }
+  .sidebar-label {
+    font-size: 10px; color: var(--muted);
+    letter-spacing: 2px; text-transform: uppercase;
+    padding: 0 16px 8px;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .tape-nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 16px;
+    cursor: pointer;
+    border-radius: 0;
+    transition: background 0.2s;
+    position: relative;
+  }
+  .tape-nav-item:hover { background: rgba(255,255,255,0.04); }
+  .tape-nav-item.active { background: rgba(139,92,246,0.12); }
+  .tape-nav-item.active::before {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--day-color);
+    border-radius: 0 2px 2px 0;
+  }
+
+  .tape-mini {
+    width: 36px; height: 24px;
+    border-radius: 4px;
+    background: var(--day-color);
+    position: relative;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .tape-mini::before {
+    content: '';
+    position: absolute;
+    width: 20px; height: 8px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 2px;
+  }
+  .tape-mini::after {
+    content: '';
+    position: absolute;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.15);
+    left: 6px; top: 50%;
+    transform: translateY(-50%);
+    box-shadow: 12px 0 rgba(0,0,0,0.4), 12px 0 0 1px rgba(255,255,255,0.1);
+  }
+
+  .tape-nav-info { flex: 1; min-width: 0; }
+  .tape-nav-day { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .tape-nav-pct { font-size: 10px; color: var(--muted); font-family: 'Space Mono', monospace; }
+
+  .progress-ring-mini {
+    width: 28px; height: 28px;
+    flex-shrink: 0;
+  }
+
+  .sidebar-bottom {
+    margin-top: auto;
+    padding: 16px;
+    border-top: 1px solid var(--border);
+  }
+  .streak-badge {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 12px;
+    background: rgba(249,115,22,0.1);
+    border: 1px solid rgba(249,115,22,0.2);
+    border-radius: 12px;
+    margin-bottom: 10px;
+  }
+  .streak-badge .fire { font-size: 18px; }
+  .streak-days { font-family: 'Space Mono', monospace; font-size: 18px; font-weight: 700; color: #F97316; }
+  .streak-label { font-size: 10px; color: var(--muted); }
+
+  /* MAIN CONTENT */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  .topbar {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 16px;
+    background: var(--surface);
+  }
+  .topbar-day {
+    font-family: 'Syne', sans-serif;
+    font-size: 24px; font-weight: 800;
+    color: var(--day-color);
+  }
+  .topbar-date { color: var(--muted); font-size: 13px; }
+
+  .content-area {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    overflow: hidden;
+  }
+  .center-col { overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+  .right-col { overflow-y: auto; padding: 20px; border-left: 1px solid var(--border); display: flex; flex-direction: column; gap: 16px; }
+
+  /* CASSETTE PLAYER */
+  .cassette-hero {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 24px;
+    display: flex; align-items: center; gap: 24px;
+  }
+  .cassette-artwork {
+    width: 180px; height: 120px;
+    border-radius: 12px;
+    position: relative;
+    flex-shrink: 0;
+    overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cassette-artwork .tape-bg {
+    position: absolute; inset: 0;
+    opacity: 0.9;
+  }
+  .cassette-artwork .tape-label-area {
+    position: relative; z-index: 1;
+    text-align: center;
+  }
+  .cassette-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    background: rgba(255,255,255,0.2);
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-bottom: 4px;
+    display: inline-block;
+  }
+  .cassette-dayname {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px; font-weight: 800;
+    letter-spacing: 2px;
+  }
+  .cassette-reels {
+    position: absolute;
+    bottom: 10px; left: 0; right: 0;
+    display: flex; justify-content: center; gap: 30px;
+  }
+  .reel {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.5);
+    border: 3px solid rgba(255,255,255,0.25);
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+  .reel::before {
+    content: '';
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.6);
+    border: 2px solid rgba(255,255,255,0.2);
+  }
+  .reel.spinning { animation: spin 2s linear infinite; }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+  .cassette-info { flex: 1; }
+  .cassette-info h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px; font-weight: 800; margin-bottom: 4px;
+  }
+  .cassette-info .date-tag { color: var(--muted); font-size: 13px; margin-bottom: 16px; }
+  
+  .progress-bar-wrap { margin-bottom: 12px; }
+  .progress-bar-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .progress-bar-track { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; border-radius: 3px; transition: width 0.8s ease; }
+
+  .stats-row { display: flex; gap: 20px; margin-bottom: 16px; }
+  .stat-item .val { font-family: 'Space Mono', monospace; font-size: 18px; font-weight: 700; }
+  .stat-item .lbl { font-size: 11px; color: var(--muted); }
+
+  .play-btn {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 28px;
+    border-radius: 50px;
+    border: none;
+    color: #fff;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px; font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+  }
+  .play-btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
+
+  /* TRACKS (Kanban) */
+  .tracks-section {}
+  .section-title {
+    font-size: 13px; font-weight: 600; color: var(--muted);
+    letter-spacing: 1px; text-transform: uppercase;
+    margin-bottom: 12px;
+    font-family: 'Space Mono', monospace;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-title .cnt {
+    background: var(--surface2);
+    padding: 1px 8px; border-radius: 20px;
+    font-size: 11px;
+  }
+  .kanban { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .kanban-col {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 14px;
+    min-height: 200px;
+  }
+  .col-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .col-title { font-size: 12px; font-weight: 700; letter-spacing: 0.5px; }
+  .col-count {
+    background: var(--surface2);
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-family: 'Space Mono', monospace;
+    color: var(--muted);
+  }
+
+  .track-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    cursor: grab;
+    transition: all 0.2s ease;
+    position: relative;
+  }
+  .track-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+  .track-card.dragging { opacity: 0.5; cursor: grabbing; }
+  .track-card-header { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+  .track-emoji { font-size: 16px; flex-shrink: 0; }
+  .track-title { font-size: 13px; font-weight: 600; flex: 1; line-height: 1.3; }
+  .track-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .track-tag {
+    font-size: 10px; padding: 2px 7px;
+    border-radius: 10px; font-family: 'Space Mono', monospace;
+    background: rgba(255,255,255,0.07);
+  }
+  .track-duration { font-size: 10px; color: var(--muted); font-family: 'Space Mono', monospace; }
+  .priority-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .add-track-btn {
+    width: 100%; padding: 8px;
+    border: 1px dashed rgba(255,255,255,0.1);
+    border-radius: 8px;
+    background: none; color: var(--muted);
+    font-size: 12px; cursor: pointer;
+    font-family: 'Space Grotesk', sans-serif;
+    transition: all 0.2s;
+  }
+  .add-track-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* FOCUS TIMER */
+  .focus-timer {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 20px;
+  }
+  .timer-cassette {
+    width: 100%; height: 80px;
+    border-radius: 10px;
+    position: relative;
+    display: flex; align-items: center;
+    justify-content: center;
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+  .timer-display {
+    font-family: 'Space Mono', monospace;
+    font-size: 32px; font-weight: 700;
+    letter-spacing: 2px;
+    position: relative; z-index: 1;
+    text-shadow: 0 0 20px currentColor;
+  }
+  .timer-reels-row {
+    position: absolute;
+    bottom: 8px; left: 0; right: 0;
+    display: flex; justify-content: center; gap: 36px;
+    z-index: 1;
+  }
+  .timer-reel {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.4);
+    border: 2px solid rgba(255,255,255,0.2);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .timer-reel::before {
+    content: '';
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+  .timer-reel.active { animation: spin 1.5s linear infinite; }
+
+  .mode-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+  .mode-tab {
+    flex: 1; padding: 7px;
+    border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--muted); font-size: 11px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .mode-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .timer-controls { display: flex; gap: 8px; }
+  .timer-btn {
+    flex: 1; padding: 10px;
+    border-radius: 10px; border: none;
+    font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all 0.2s;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .timer-btn-primary { background: var(--accent); color: #fff; }
+  .timer-btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .timer-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+  .vibe-section { margin-top: 14px; }
+  .vibe-label { font-size: 11px; color: var(--muted); margin-bottom: 8px; letter-spacing: 1px; text-transform: uppercase; font-family: 'Space Mono', monospace; }
+  .vibe-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .vibe-btn {
+    aspect-ratio: 1; border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 2px; cursor: pointer;
+    transition: all 0.2s; font-size: 18px;
+  }
+  .vibe-btn span { font-size: 8px; color: var(--muted); }
+  .vibe-btn:hover { border-color: var(--accent); background: rgba(139,92,246,0.15); transform: translateY(-2px); }
+  .vibe-btn.active { border-color: var(--accent); background: rgba(139,92,246,0.2); }
+
+  /* THOUGHT OF DAY */
+  .thought-widget {
+    background: linear-gradient(135deg, #fef9c3, #fde68a);
+    border-radius: 16px;
+    padding: 18px;
+    position: relative;
+  }
+  .thought-widget::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='1' height='1' fill='rgba(0,0,0,0.05)'/%3E%3C/svg%3E");
+    border-radius: 16px;
+  }
+  .thought-label { font-size: 10px; font-weight: 700; color: #92400e; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; font-family: 'Space Mono', monospace; position: relative; }
+  .thought-text { font-size: 15px; color: #1c1917; line-height: 1.5; font-style: italic; font-weight: 500; position: relative; }
+  .thought-pin { position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 12px; height: 12px; background: #ef4444; border-radius: 50%; border: 2px solid #b91c1c; }
+
+  /* MOOD */
+  .mood-widget {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px;
+  }
+  .mood-row { display: flex; gap: 8px; justify-content: space-between; }
+  .mood-btn {
+    flex: 1; padding: 10px 4px;
+    border-radius: 12px; border: 1px solid var(--border);
+    background: var(--surface2);
+    display: flex; flex-direction: column;
+    align-items: center; gap: 4px;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .mood-emoji { font-size: 22px; }
+  .mood-label-text { font-size: 9px; color: var(--muted); font-family: 'Space Mono', monospace; }
+  .mood-btn:hover { transform: translateY(-3px); border-color: var(--accent); }
+  .mood-btn.selected { border-color: var(--accent); background: rgba(139,92,246,0.15); }
+
+  /* WEEK SHELF */
+  .week-shelf {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 20px;
+  }
+  .shelf-board {
+    display: flex; gap: 10px;
+    padding: 16px;
+    background: linear-gradient(180deg, #2d1b1b 0%, #1a0f0f 100%);
+    border-radius: 12px;
+    position: relative;
+    align-items: flex-end;
+    min-height: 90px;
+  }
+  .shelf-board::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 8px;
+    background: linear-gradient(180deg, #8B5E3C 0%, #5c3d1e 100%);
+    border-radius: 0 0 12px 12px;
+  }
+  .shelf-tape {
+    flex: 1; min-width: 0;
+    height: 60px;
+    border-radius: 6px;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .shelf-tape:hover { transform: translateY(-10px); box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 20px var(--c); }
+  .shelf-tape-day {
+    font-family: 'Space Mono', monospace;
+    font-size: 8px; font-weight: 700;
+    letter-spacing: 1px;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    color: rgba(255,255,255,0.9);
+    margin-bottom: 4px;
+  }
+  .shelf-tape-done {
+    font-size: 14px;
+    position: absolute; top: 2px; right: 4px;
+  }
+
+  /* AI PANEL */
+  .ai-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 18px;
+    display: flex; flex-direction: column;
+    height: 320px;
+  }
+  .ai-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .ai-icon { 
+    width: 28px; height: 28px; border-radius: 8px;
+    background: linear-gradient(135deg, #a855f7, #06b6d4);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+  }
+  .ai-title { font-weight: 700; font-size: 14px; }
+  .ai-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+  .ai-msg {
+    padding: 8px 12px; border-radius: 12px;
+    font-size: 12px; line-height: 1.5;
+    max-width: 90%;
+  }
+  .ai-msg.user { background: rgba(139,92,246,0.2); border: 1px solid rgba(139,92,246,0.3); align-self: flex-end; }
+  .ai-msg.ai { background: var(--surface2); border: 1px solid var(--border); align-self: flex-start; color: var(--muted); }
+  .ai-msg.ai strong { color: var(--text); }
+  .ai-input-row { display: flex; gap: 8px; }
+  .ai-input {
+    flex: 1; padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px; background: var(--surface2);
+    color: var(--text); font-size: 12px;
+    font-family: 'Space Grotesk', sans-serif;
+    outline: none;
+  }
+  .ai-input:focus { border-color: var(--accent); }
+  .ai-send {
+    width: 34px; height: 34px; border-radius: 10px;
+    border: none; background: var(--accent);
+    color: #fff; cursor: pointer; font-size: 14px;
+    transition: all 0.2s;
+  }
+  .ai-send:hover { filter: brightness(1.1); }
+
+  /* STATS */
+  .stats-widget {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 18px;
+  }
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+  }
+  .stat-box .num { font-family: 'Space Mono', monospace; font-size: 22px; font-weight: 700; margin-bottom: 2px; }
+  .stat-box .lbl { font-size: 10px; color: var(--muted); }
+
+  /* TAPE COMPLETE OVERLAY */
+  #complete-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 200;
+    align-items: center; justify-content: center;
+    flex-direction: column;
+  }
+  #complete-overlay.show { display: flex; }
+  .complete-card {
+    background: var(--surface);
+    border: 1px solid rgba(139,92,246,0.5);
+    border-radius: 28px;
+    padding: 48px;
+    text-align: center;
+    max-width: 400px;
+    animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1);
+    box-shadow: 0 0 80px rgba(139,92,246,0.3);
+  }
+  @keyframes popIn { from { opacity:0; transform:scale(0.8); } to { opacity:1; transform:scale(1); } }
+  .complete-tape-art {
+    width: 140px; height: 90px;
+    border-radius: 12px;
+    margin: 0 auto 24px;
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .confetti-container {
+    position: absolute; inset: 0; overflow: hidden; border-radius: 12px;
+    pointer-events: none;
+  }
+  .confetti-dot {
+    position: absolute;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    animation: confettiFall 2s ease-in infinite;
+  }
+  @keyframes confettiFall {
+    0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100px) rotate(720deg); opacity: 0; }
+  }
+  .complete-title { font-family: 'Syne', sans-serif; font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+  .complete-sub { color: var(--muted); margin-bottom: 28px; }
+  .eject-btn {
+    padding: 14px 36px; border-radius: 50px;
+    border: none; background: linear-gradient(135deg, #8B5CF6, #6366f1);
+    color: #fff; font-family: 'Space Grotesk', sans-serif;
+    font-size: 15px; font-weight: 700;
+    cursor: pointer; transition: all 0.3s;
+  }
+  .eject-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(139,92,246,0.5); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+  /* ADD TRACK MODAL */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7); z-index: 300;
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px; width: 400px;
+    animation: popIn 0.3s ease;
+  }
+  .modal-title { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; margin-bottom: 20px; }
+  .form-group { margin-bottom: 14px; }
+  .form-label { font-size: 11px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; display: block; font-family: 'Space Mono', monospace; }
+  .form-input {
+    width: 100%; padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px; background: var(--surface2);
+    color: var(--text); font-size: 14px;
+    font-family: 'Space Grotesk', sans-serif;
+    outline: none; transition: border-color 0.2s;
+  }
+  .form-input:focus { border-color: var(--accent); }
+  .form-row { display: flex; gap: 10px; }
+  .form-row .form-group { flex: 1; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .btn-cancel { flex: 1; padding: 10px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); cursor: pointer; font-family: 'Space Grotesk', sans-serif; font-size: 14px; }
+  .btn-save { flex: 1; padding: 10px; border-radius: 10px; border: none; background: var(--accent); color: #fff; cursor: pointer; font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 700; }
+
+  /* MUSIC MINI */
+  .music-widget {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 14px 16px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .music-art {
+    width: 40px; height: 40px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #1db954, #191414);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .music-info { flex: 1; min-width: 0; }
+  .music-track { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .music-artist { font-size: 11px; color: var(--muted); }
+  .music-controls { display: flex; gap: 4px; align-items: center; }
+  .mc-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; padding: 4px; transition: color 0.2s; }
+  .mc-btn:hover { color: var(--text); }
+  .mc-btn.play { 
+    width: 30px; height: 30px; border-radius: 50%;
+    background: var(--accent); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+  }
+
+  /* Notification */
+  .notif {
+    position: fixed; top: 20px; right: 20px;
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: 14px;
+    padding: 12px 18px;
+    font-size: 13px;
+    z-index: 400;
+    animation: slideInRight 0.4s ease;
+    box-shadow: 0 8px 32px rgba(139,92,246,0.3);
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .notif.show { opacity: 1; }
+  @keyframes slideInRight { from { transform: translateX(50px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+</style>
+</head>
+<body>
+
+<!-- LANDING PAGE -->
+<div id="landing">
+  <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none">
+    <div style="position:absolute;top:-200px;left:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(139,92,246,0.15) 0%,transparent 70%);border-radius:50%;animation:float 8s ease-in-out infinite"></div>
+    <div style="position:absolute;bottom:-200px;right:-200px;width:500px;height:500px;background:radial-gradient(circle,rgba(6,182,212,0.1) 0%,transparent 70%);border-radius:50%;animation:float 10s ease-in-out infinite reverse"></div>
+  </div>
+  <style>@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-30px)}}</style>
+
+  <div class="landing-logo">
+    <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
+      <path d="M4 36L14 12L22 28L30 16L36 28" stroke="url(#g1)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M14 12L22 28" stroke="url(#g2)" stroke-width="2.5" stroke-linecap="round" opacity="0.6"/>
+      <circle cx="38" cy="8" r="3" fill="url(#g1)"/>
+      <defs>
+        <linearGradient id="g1" x1="0" y1="0" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#a855f7"/><stop offset="1" stop-color="#06b6d4"/>
+        </linearGradient>
+        <linearGradient id="g2" x1="0" y1="0" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#a855f7"/><stop offset="1" stop-color="#06b6d4"/>
+        </linearGradient>
+      </defs>
+    </svg>
+    <div>
+      <div class="logo-text">TaskTape</div>
+      <div class="logo-sub">by manal_verse.co</div>
+    </div>
+  </div>
+
+  <h1 class="hero-title">
+    <div class="line1">Your week.</div>
+    <div class="line2">Your mixtape.</div>
+  </h1>
+  <p class="hero-sub">Plan your week one cassette at a time. 📼</p>
+
+  <div class="landing-shelf">
+    <div class="landing-tape" style="--c:#8B5CF6;background:linear-gradient(135deg,#8B5CF6,#7c3aed)">MON</div>
+    <div class="landing-tape" style="--c:#EC4899;background:linear-gradient(135deg,#EC4899,#db2777)">TUE</div>
+    <div class="landing-tape" style="--c:#F59E0B;background:linear-gradient(135deg,#F59E0B,#d97706)">WED</div>
+    <div class="landing-tape" style="--c:#10B981;background:linear-gradient(135deg,#10B981,#059669)">THU</div>
+    <div class="landing-tape" style="--c:#F97316;background:linear-gradient(135deg,#F97316,#ea580c)">FRI</div>
+    <div class="landing-tape" style="--c:#3B82F6;background:linear-gradient(135deg,#3B82F6,#2563eb)">SAT</div>
+    <div class="landing-tape" style="--c:#EF4444;background:linear-gradient(135deg,#EF4444,#dc2626)">SUN</div>
+  </div>
+
+  <button class="cta-btn" onclick="enterApp()">
+    <span>▶</span> Start Your Week
+  </button>
+
+  <div style="margin-top:24px;font-size:11px;color:rgba(255,255,255,0.2);font-family:'Space Mono',monospace;letter-spacing:1px">
+    manal_verse.co · CODE · DESIGN · AI · FUTURE
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" style="display:none">
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+      <svg width="24" height="24" viewBox="0 0 44 44" fill="none">
+        <path d="M4 36L14 12L22 28L30 16L36 28" stroke="url(#sg1)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="38" cy="8" r="3" fill="url(#sg1)"/>
+        <defs>
+          <linearGradient id="sg1" x1="0" y1="0" x2="44" y2="44">
+            <stop stop-color="#a855f7"/><stop offset="1" stop-color="#06b6d4"/>
+          </linearGradient>
+        </defs>
+      </svg>
+      <div class="sidebar-logo-text">TaskTape</div>
+    </div>
+    <div class="sidebar-logo-tagline">your week. your mix.</div>
+  </div>
+
+  <div class="sidebar-label">Week Tapes</div>
+  <div id="tape-nav"></div>
+
+  <div class="sidebar-bottom">
+    <div class="streak-badge">
+      <div class="fire">🔥</div>
+      <div>
+        <div class="streak-days" id="streak-display">7</div>
+        <div class="streak-label">day streak</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button style="flex:1;padding:8px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);cursor:pointer;font-size:16px">⚙️</button>
+      <button style="flex:1;padding:8px;border-radius:10px;background:linear-gradient(135deg,#a855f7,#06b6d4);border:none;cursor:pointer;font-size:12px;font-weight:700;color:#fff;font-family:'Space Grotesk',sans-serif" onclick="showComplete()">📼 Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <button onclick="window.currentDay>0&&selectDay(window.currentDay-1)" style="background:none;border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--muted);cursor:pointer;font-size:14px">‹</button>
+    <div id="tape-num-badge" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:4px 10px;font-family:'Space Mono',monospace;font-size:12px"></div>
+    <div id="topbar-day" class="topbar-day" style="--day-color:#8B5CF6">MONDAY</div>
+    <div class="topbar-date" id="topbar-date">June 23, 2025</div>
+    <div style="flex:1"></div>
+    <button style="background:none;border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--muted);cursor:pointer;font-size:12px">🎵</button>
+    <button style="background:none;border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--muted);cursor:pointer;font-size:12px">🖼</button>
+    <button onclick="window.currentDay<6&&selectDay(window.currentDay+1)" style="background:none;border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--muted);cursor:pointer;font-size:14px">›</button>
+  </div>
+
+  <div class="content-area">
+    <!-- CENTER -->
+    <div class="center-col">
+      <!-- CASSETTE HERO -->
+      <div class="cassette-hero">
+        <div class="cassette-artwork" id="cassette-main">
+          <div class="tape-bg" id="cassette-bg"></div>
+          <div class="cassette-reels">
+            <div class="reel" id="reel-left"></div>
+            <div class="reel" id="reel-right"></div>
+          </div>
+          <div class="tape-label-area">
+            <div class="cassette-num" id="cassette-num-display">001</div>
+            <div class="cassette-dayname" id="cassette-dayname">MONDAY</div>
+          </div>
+        </div>
+        <div class="cassette-info">
+          <h2 id="dash-dayname">Monday</h2>
+          <div class="date-tag" id="dash-date">June 28, 2026</div>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-label">
+              <span>Progress</span>
+              <span id="pct-display" style="font-family:'Space Mono',monospace;font-weight:700">29%</span>
+            </div>
+            <div class="progress-bar-track">
+              <div class="progress-bar-fill" id="main-progress-fill" style="width:29%;background:var(--monday)"></div>
+            </div>
+          </div>
+          <div class="stats-row">
+            <div class="stat-item">
+              <div class="val" id="focus-time-display" style="color:var(--monday)">1h 24m</div>
+              <div class="lbl">Focus Time</div>
+            </div>
+            <div class="stat-item">
+              <div class="val" id="tasks-left-display">5</div>
+              <div class="lbl">Tracks Left</div>
+            </div>
+          </div>
+          <button class="play-btn" id="play-day-btn" style="background:linear-gradient(135deg,#8B5CF6,#6366f1)" onclick="togglePlay()">
+            <span id="play-icon">▶</span>
+            <span id="play-text">PLAY DAY</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- THOUGHT OF DAY -->
+      <div style="position:relative">
+        <div class="thought-pin"></div>
+        <div class="thought-widget">
+          <div class="thought-label">📌 Thought of the Day</div>
+          <div class="thought-text" id="thought-text">"Small progress every day leads to big results."</div>
+        </div>
+      </div>
+
+      <!-- MOOD -->
+      <div class="mood-widget">
+        <div class="section-title" style="margin-bottom:12px">Today's Vibe — How are you feeling?</div>
+        <div class="mood-row">
+          <div class="mood-btn" onclick="selectMood(this,'happy')"><div class="mood-emoji">😊</div><div class="mood-label-text">Happy</div></div>
+          <div class="mood-btn" onclick="selectMood(this,'calm')"><div class="mood-emoji">😌</div><div class="mood-label-text">Calm</div></div>
+          <div class="mood-btn" onclick="selectMood(this,'tired')"><div class="mood-emoji">😴</div><div class="mood-label-text">Tired</div></div>
+          <div class="mood-btn" onclick="selectMood(this,'stressed')"><div class="mood-emoji">😤</div><div class="mood-label-text">Stressed</div></div>
+          <div class="mood-btn" onclick="selectMood(this,'motivated')"><div class="mood-emoji">🔥</div><div class="mood-label-text">Motivated</div></div>
+        </div>
+      </div>
+
+      <!-- TRACKS -->
+      <div class="tracks-section">
+        <div class="section-title">🎵 Tracks <span class="cnt" id="total-tracks-badge">11</span></div>
+        <div class="kanban" id="kanban-board"></div>
+      </div>
+
+      <!-- WEEK SHELF -->
+      <div class="week-shelf">
+        <div class="section-title">📼 Week View — Your 7 tapes. Your story.</div>
+        <div class="shelf-board" id="week-shelf"></div>
+      </div>
+
+      <!-- STATS -->
+      <div class="stats-widget">
+        <div class="section-title" style="margin-bottom:14px">📊 Tape Stats</div>
+        <div class="stats-grid">
+          <div class="stat-box"><div class="num" style="color:#8B5CF6">8h 36m</div><div class="lbl">Total Focus Time</div></div>
+          <div class="stat-box"><div class="num" style="color:#10B981" id="completed-count">4</div><div class="lbl">Tracks Completed</div></div>
+          <div class="stat-box"><div class="num" style="color:#F97316" id="rate-display">29%</div><div class="lbl">Completion Rate</div></div>
+          <div class="stat-box"><div class="num" style="color:#F59E0B">7 🔥</div><div class="lbl">Current Streak</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="right-col">
+      <!-- MUSIC -->
+      <div class="music-widget">
+        <div class="music-art">🎵</div>
+        <div class="music-info">
+          <div class="music-track">lofi beats — chillhop</div>
+          <div class="music-artist">chillhop essentials</div>
+        </div>
+        <div class="music-controls">
+          <button class="mc-btn">⏮</button>
+          <button class="mc-btn play" id="music-play-btn" onclick="toggleMusic()">▶</button>
+          <button class="mc-btn">⏭</button>
+        </div>
+      </div>
+
+      <!-- FOCUS TIMER -->
+      <div class="focus-timer">
+        <div class="section-title" style="margin-bottom:12px">⏱ Focus Timer</div>
+        <div class="timer-cassette" id="timer-cassette">
+          <div style="position:absolute;inset:0;border-radius:10px;opacity:0.85" id="timer-bg"></div>
+          <div class="timer-display" id="timer-display">25:00</div>
+          <div class="timer-reels-row">
+            <div class="timer-reel" id="timer-reel-l"></div>
+            <div class="timer-reel" id="timer-reel-r"></div>
+          </div>
+        </div>
+        <div class="mode-tabs">
+          <button class="mode-tab active" onclick="setTimerMode(this,25,'Pomodoro')">Pomodoro</button>
+          <button class="mode-tab" onclick="setTimerMode(this,5,'Short Break')">Short Break</button>
+          <button class="mode-tab" onclick="setTimerMode(this,15,'Long Break')">Long Break</button>
+        </div>
+        <div class="timer-controls">
+          <button class="timer-btn timer-btn-primary" id="timer-start-btn" onclick="toggleTimer()">▶ Start</button>
+          <button class="timer-btn timer-btn-secondary" onclick="resetTimer()">↺ Reset</button>
+        </div>
+        <div class="vibe-section">
+          <div class="vibe-label">Choose your vibe</div>
+          <div class="vibe-grid">
+            <button class="vibe-btn active"><span>🎵</span><span>Lo-fi</span></button>
+            <button class="vibe-btn"><span>🌧</span><span>Rain</span></button>
+            <button class="vibe-btn"><span>☕</span><span>Cafe</span></button>
+            <button class="vibe-btn"><span>🔊</span><span>Noise</span></button>
+            <button class="vibe-btn"><span>🎧</span><span>Spotify</span></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI ASSISTANT -->
+      <div class="ai-panel">
+        <div class="ai-header">
+          <div class="ai-icon">✦</div>
+          <div>
+            <div class="ai-title">AI Assistant</div>
+            <div style="font-size:10px;color:var(--muted)">by manal_verse.co</div>
+          </div>
+        </div>
+        <div class="ai-messages" id="ai-messages">
+          <div class="ai-msg ai">👋 <strong>Hey!</strong> Tell me what's on your plate today and I'll plan your tracks.</div>
+        </div>
+        <div class="ai-input-row">
+          <input class="ai-input" id="ai-input" placeholder="e.g. I have exams in 3 days..." onkeydown="if(event.key==='Enter')sendAI()"/>
+          <button class="ai-send" onclick="sendAI()">➤</button>
+        </div>
+      </div>
+
+      <!-- NOTES -->
+      <div class="focus-timer">
+        <div class="section-title" style="margin-bottom:10px">📝 Notes</div>
+        <textarea style="width:100%;height:100px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:13px;resize:none;outline:none;line-height:1.5" placeholder="Don't forget to revise formulas before solving problems..."></textarea>
+        <div style="font-size:10px;color:var(--muted);margin-top:6px;font-family:'Space Mono',monospace">Auto-saved · Markdown supported</div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ADD TRACK MODAL -->
+<div class="modal-overlay" id="add-modal">
+  <div class="modal">
+    <div class="modal-title">🎵 Add New Track</div>
+    <div class="form-group">
+      <label class="form-label">Track Title</label>
+      <input class="form-input" id="track-title-input" placeholder="e.g. Study Physics Ch.3"/>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Duration</label>
+        <input class="form-input" id="track-dur-input" placeholder="e.g. 45 mins"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Priority</label>
+        <select class="form-input" id="track-priority-input">
+          <option value="high">🔴 High</option>
+          <option value="medium" selected>🟡 Medium</option>
+          <option value="low">🟢 Low</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Emoji</label>
+      <input class="form-input" id="track-emoji-input" placeholder="📚" maxlength="2"/>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="saveTrack()">Add Track</button>
+    </div>
+  </div>
+</div>
+
+<!-- TAPE COMPLETE -->
+<div id="complete-overlay">
+  <div style="position:absolute;inset:0" onclick="closeComplete()"></div>
+  <div class="complete-card">
+    <div class="confetti-container" id="confetti-container"></div>
+    <div class="complete-tape-art" id="complete-tape-art">
+      <div style="position:absolute;inset:0;border-radius:12px" id="complete-tape-bg"></div>
+      <div style="position:relative;z-index:1;text-align:center">
+        <div style="font-size:28px;margin-bottom:4px">⭐</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:14px;letter-spacing:2px" id="complete-dayname">MONDAY</div>
+      </div>
+    </div>
+    <div class="complete-title" id="complete-title">Monday Complete!</div>
+    <div class="complete-sub">Great work. See you tomorrow. 💜</div>
+    <button class="eject-btn" onclick="closeComplete()">⏏ Eject Tape</button>
+  </div>
+</div>
+
+<!-- NOTIFICATION -->
+<div class="notif" id="notif">
+  <span id="notif-text">Track added! 🎵</span>
+</div>
+
+<script>
+const DAYS = [
+  { name:'Monday',   short:'MON', num:'001', color:'#8B5CF6', emoji:'🌸' },
+  { name:'Tuesday',  short:'TUE', num:'002', color:'#EC4899', emoji:'🌺' },
+  { name:'Wednesday',short:'WED', num:'003', color:'#F59E0B', emoji:'🌻' },
+  { name:'Thursday', short:'THU', num:'004', color:'#10B981', emoji:'🍃' },
+  { name:'Friday',   short:'FRI', num:'005', color:'#F97316', emoji:'🌅' },
+  { name:'Saturday', short:'SAT', num:'006', color:'#3B82F6', emoji:'🌊' },
+  { name:'Sunday',   short:'SUN', num:'007', color:'#EF4444', emoji:'🌹' },
+];
+
+const THOUGHTS = [
+  '"Small progress every day leads to big results."',
+  '"Your only limit is your mind."',
+  '"Make today so awesome, yesterday gets jealous."',
+  '"One track at a time. One day at a time."',
+  '"The cassette doesn\'t stop until the tape ends."',
+  '"Play the day like it\'s your favorite song."',
+  '"Every great week starts with a single track."',
+];
+
+const AI_RESPONSES = [
+  msg => `Got it! Here's a plan for: **${msg}**\n\n🎵 Track 1: Research & Overview (30 min)\n🎵 Track 2: Deep Work Session (1h)\n🎵 Track 3: Review & Notes (20 min)\n\nShall I add these to today's tape?`,
+  msg => `Perfect! I've analyzed "${msg}" and suggest:\n\n🎵 Morning: Priority tasks (focused 45m blocks)\n🎵 Afternoon: Review sessions with breaks\n🎵 Evening: Light prep for tomorrow\n\nWant me to add these as tracks?`,
+  msg => `For **${msg}**, I recommend:\n\n🔴 High Priority: Core study block (1h)\n🟡 Medium: Practice problems (30m)\n🟢 Low: Quick review before sleep (15m)\n\nLooks doable! Add all to today?`,
+];
+
+let state = {
+  currentDay: new Date().getDay() === 0 ? 6 : new Date().getDay() - 1,
+  isPlaying: false,
+  timerRunning: false,
+  timerSeconds: 25 * 60,
+  timerMode: 25,
+  timerInterval: null,
+  musicPlaying: false,
+  addingToCol: 0,
+  tracks: {
+    0: [
+      { id:1, title:'Chemistry Ch.3', desc:'Read & Notes', emoji:'📚', dur:'45m', priority:'high' },
+      { id:2, title:'Edit Reel', desc:'For manal_verse', emoji:'🎬', dur:'30m', priority:'medium' },
+      { id:3, title:'Call Supplier', desc:'Regarding packaging', emoji:'📞', dur:'15m', priority:'low' },
+      { id:4, title:'Workout', desc:'30 mins', emoji:'💪', dur:'30m', priority:'medium' },
+      { id:5, title:'Read 20 pages', desc:'Atomic Habits', emoji:'📖', dur:'40m', priority:'low' },
+    ],
+    1: [
+      { id:6, title:'Study Physics', desc:'Laws of Motion', emoji:'⚡', dur:'1h', priority:'high' },
+      { id:7, title:'Design Logo', desc:'Khadim Host', emoji:'🎨', dur:'45m', priority:'medium' },
+    ],
+    2: [
+      { id:8, title:'Math Homework', desc:'Coordinate Geo.', emoji:'📐', dur:'1h', priority:'high', done:true },
+      { id:9, title:'Morning Journal', emoji:'📓', dur:'15m', priority:'low', done:true },
+      { id:10, title:'Drink 2L Water', emoji:'💧', dur:'—', priority:'low', done:true },
+      { id:11, title:'Meditation', desc:'10 mins', emoji:'🧘', dur:'10m', priority:'low', done:true },
+    ],
+  },
+  dayProgress: [29, 12, 0, 0, 0, 0, 0],
+  nextId: 12,
+};
+
+window.currentDay = state.currentDay;
+
+function enterApp() {
+  document.getElementById('landing').classList.add('hidden');
+  setTimeout(() => {
+    document.getElementById('landing').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    buildSidebar();
+    buildWeekShelf();
+    selectDay(state.currentDay);
+  }, 800);
+}
+
+function buildSidebar() {
+  const nav = document.getElementById('tape-nav');
+  nav.innerHTML = DAYS.map((d,i) => `
+    <div class="tape-nav-item ${i===state.currentDay?'active':''}" id="nav-${i}" onclick="selectDay(${i})" style="--day-color:${d.color}">
+      <div class="tape-mini" style="--day-color:${d.color};background:${d.color}"></div>
+      <div class="tape-nav-info">
+        <div class="tape-nav-day">${d.name}</div>
+        <div class="tape-nav-pct">${state.dayProgress[i]}% done</div>
+      </div>
+      <svg class="progress-ring-mini" viewBox="0 0 28 28">
+        <circle cx="14" cy="14" r="11" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
+        <circle cx="14" cy="14" r="11" fill="none" stroke="${d.color}" stroke-width="2"
+          stroke-dasharray="${2*Math.PI*11}" stroke-dashoffset="${2*Math.PI*11*(1-state.dayProgress[i]/100)}"
+          stroke-linecap="round" transform="rotate(-90 14 14)"/>
+      </svg>
+    </div>
+  `).join('');
+}
+
+function buildWeekShelf() {
+  const shelf = document.getElementById('week-shelf');
+  shelf.innerHTML = DAYS.map((d,i) => `
+    <div class="shelf-tape" onclick="selectDay(${i})" style="--c:${d.color};background:linear-gradient(180deg,${d.color},${d.color}cc)">
+      ${state.dayProgress[i]===100?'<div class="shelf-tape-done">⭐</div>':''}
+      <div class="shelf-tape-day">${d.name.toUpperCase()}</div>
+      <div style="width:80%;height:3px;background:rgba(0,0,0,0.3);border-radius:2px;margin:2px 0">
+        <div style="height:100%;width:${state.dayProgress[i]}%;background:rgba(255,255,255,0.5);border-radius:2px"></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function selectDay(idx) {
+  state.currentDay = idx;
+  window.currentDay = idx;
+  const d = DAYS[idx];
+
+  // Update nav active
+  document.querySelectorAll('.tape-nav-item').forEach((el,i) => {
+    el.classList.toggle('active', i===idx);
+  });
+
+  // Update topbar
+  document.getElementById('topbar-day').textContent = d.name.toUpperCase();
+  document.getElementById('topbar-day').style.color = d.color;
+  document.getElementById('tape-num-badge').textContent = d.num;
+  document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+
+  // Update cassette
+  document.getElementById('cassette-bg').style.background = `linear-gradient(135deg, ${d.color}dd, ${d.color}88)`;
+  document.getElementById('cassette-num-display').textContent = d.num;
+  document.getElementById('cassette-dayname').textContent = d.name.toUpperCase();
+  document.getElementById('dash-dayname').textContent = d.name;
+  document.getElementById('dash-date').textContent = new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+
+  // Update play button color
+  document.getElementById('play-day-btn').style.background = `linear-gradient(135deg, ${d.color}, ${d.color}bb)`;
+  document.getElementById('main-progress-fill').style.background = d.color;
+  document.getElementById('focus-time-display').style.color = d.color;
+
+  // Timer bg
+  document.getElementById('timer-bg').style.background = `linear-gradient(135deg, ${d.color}44, ${d.color}22)`;
+
+  // Update thought
+  document.getElementById('thought-text').textContent = THOUGHTS[idx];
+
+  // Update progress
+  updateProgress();
+
+  // Render kanban
+  renderKanban();
+}
+
+function computeProgress() {
+  const total = (state.tracks[0]?.length||0) + (state.tracks[1]?.length||0) + (state.tracks[2]?.length||0);
+  const done = state.tracks[2]?.length||0;
+  return total === 0 ? 0 : Math.round((done/total)*100);
+}
+
+function updateProgress() {
+  const pct = computeProgress();
+  state.dayProgress[state.currentDay] = pct;
+  document.getElementById('pct-display').textContent = pct+'%';
+  document.getElementById('main-progress-fill').style.width = pct+'%';
+  const todo = state.tracks[0]?.length||0;
+  const inprog = state.tracks[1]?.length||0;
+  const done = state.tracks[2]?.length||0;
+  document.getElementById('tasks-left-display').textContent = todo+inprog;
+  document.getElementById('completed-count').textContent = done;
+  document.getElementById('rate-display').textContent = pct+'%';
+  document.getElementById('total-tracks-badge').textContent = todo+inprog+done;
+  // update nav pct
+  const navEl = document.querySelector(`#nav-${state.currentDay} .tape-nav-pct`);
+  if(navEl) navEl.textContent = pct+'% done';
+  buildWeekShelf();
+}
+
+function renderKanban() {
+  const cols = [
+    { title:'🎵 To Play', key:0, color:'#6B7280' },
+    { title:'▶ Playing',  key:1, color:DAYS[state.currentDay].color },
+    { title:'✔ Finished', key:2, color:'#10B981' },
+  ];
+  const board = document.getElementById('kanban-board');
+  board.innerHTML = cols.map(col => `
+    <div class="kanban-col" ondragover="dragOver(event,${col.key})" ondrop="drop(event,${col.key})">
+      <div class="col-header">
+        <div class="col-title" style="color:${col.color}">${col.title}</div>
+        <div class="col-count">${state.tracks[col.key]?.length||0}</div>
+      </div>
+      ${(state.tracks[col.key]||[]).map(t => `
+        <div class="track-card" draggable="true" ondragstart="dragStart(event,${t.id},${col.key})"
+          style="border-left:3px solid ${t.priority==='high'?'#EF4444':t.priority==='medium'?'#F59E0B':'#10B981'}">
+          <div class="track-card-header">
+            <div class="track-emoji">${t.emoji||'🎵'}</div>
+            <div class="track-title">${t.title}</div>
+          </div>
+          <div class="track-meta">
+            ${t.desc?`<span class="track-tag">${t.desc}</span>`:''}
+            <span class="track-duration">⏱ ${t.dur||'—'}</span>
+          </div>
+        </div>
+      `).join('')}
+      <button class="add-track-btn" onclick="openAddModal(${col.key})">+ Add Track</button>
+    </div>
+  `).join('');
+}
+
+let dragId = null, dragCol = null;
+function dragStart(e, id, col) { dragId=id; dragCol=col; e.dataTransfer.effectAllowed='move'; }
+function dragOver(e, col) { e.preventDefault(); }
+function drop(e, toCol) {
+  e.preventDefault();
+  if(dragId===null) return;
+  let track;
+  for(let c in state.tracks) {
+    const idx = state.tracks[c].findIndex(t=>t.id===dragId);
+    if(idx>-1) { [track] = state.tracks[c].splice(idx,1); break; }
+  }
+  if(track) { state.tracks[toCol] = state.tracks[toCol]||[]; state.tracks[toCol].push(track); }
+  dragId=null; dragCol=null;
+  renderKanban(); updateProgress();
+}
+
+function openAddModal(col) {
+  state.addingToCol = col;
+  document.getElementById('add-modal').classList.add('show');
+  document.getElementById('track-title-input').focus();
+}
+function closeModal() { document.getElementById('add-modal').classList.remove('show'); }
+function saveTrack() {
+  const title = document.getElementById('track-title-input').value.trim();
+  if(!title) return;
+  const track = {
+    id: state.nextId++,
+    title,
+    emoji: document.getElementById('track-emoji-input').value.trim() || '🎵',
+    dur: document.getElementById('track-dur-input').value.trim() || '—',
+    priority: document.getElementById('track-priority-input').value,
+  };
+  state.tracks[state.addingToCol] = state.tracks[state.addingToCol]||[];
+  state.tracks[state.addingToCol].push(track);
+  closeModal();
+  document.getElementById('track-title-input').value='';
+  document.getElementById('track-emoji-input').value='';
+  document.getElementById('track-dur-input').value='';
+  renderKanban(); updateProgress();
+  showNotif('Track added! 🎵');
+}
+
+function togglePlay() {
+  state.isPlaying = !state.isPlaying;
+  const icon = document.getElementById('play-icon');
+  const text = document.getElementById('play-text');
+  const rl = document.getElementById('reel-left');
+  const rr = document.getElementById('reel-right');
+  if(state.isPlaying) {
+    icon.textContent='⏸'; text.textContent='PAUSE DAY';
+    rl.classList.add('spinning'); rr.classList.add('spinning');
+  } else {
+    icon.textContent='▶'; text.textContent='PLAY DAY';
+    rl.classList.remove('spinning'); rr.classList.remove('spinning');
+  }
+}
+
+function toggleMusic() {
+  state.musicPlaying = !state.musicPlaying;
+  document.getElementById('music-play-btn').textContent = state.musicPlaying ? '⏸' : '▶';
+}
+
+// TIMER
+function setTimerMode(btn, mins, label) {
+  document.querySelectorAll('.mode-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  state.timerMode = mins;
+  resetTimer();
+}
+function toggleTimer() {
+  if(state.timerRunning) {
+    clearInterval(state.timerInterval);
+    state.timerRunning = false;
+    document.getElementById('timer-start-btn').textContent='▶ Start';
+    document.getElementById('timer-reel-l').classList.remove('active');
+    document.getElementById('timer-reel-r').classList.remove('active');
+  } else {
+    state.timerRunning = true;
+    document.getElementById('timer-start-btn').textContent='⏸ Pause';
+    document.getElementById('timer-reel-l').classList.add('active');
+    document.getElementById('timer-reel-r').classList.add('active');
+    state.timerInterval = setInterval(() => {
+      state.timerSeconds--;
+      if(state.timerSeconds <= 0) {
+        clearInterval(state.timerInterval);
+        state.timerRunning=false;
+        state.timerSeconds=0;
+        document.getElementById('timer-start-btn').textContent='▶ Start';
+        document.getElementById('timer-reel-l').classList.remove('active');
+        document.getElementById('timer-reel-r').classList.remove('active');
+        showNotif('Pomodoro complete! 🎉 Take a break.');
+      }
+      updateTimerDisplay();
+    }, 1000);
+  }
+}
+function resetTimer() {
+  clearInterval(state.timerInterval);
+  state.timerRunning=false;
+  state.timerSeconds = state.timerMode * 60;
+  document.getElementById('timer-start-btn').textContent='▶ Start';
+  document.getElementById('timer-reel-l').classList.remove('active');
+  document.getElementById('timer-reel-r').classList.remove('active');
+  updateTimerDisplay();
+}
+function updateTimerDisplay() {
+  const m = Math.floor(state.timerSeconds/60).toString().padStart(2,'0');
+  const s = (state.timerSeconds%60).toString().padStart(2,'0');
+  document.getElementById('timer-display').textContent = `${m}:${s}`;
+}
+
+function selectMood(el, mood) {
+  document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+  showNotif(`Mood set to ${mood}! 💫`);
+}
+
+function selectVibe(el) {
+  document.querySelectorAll('.vibe-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+}
+document.querySelectorAll('.vibe-btn').forEach(b => b.onclick = () => selectVibe(b));
+
+// AI
+function sendAI() {
+  const input = document.getElementById('ai-input');
+  const msg = input.value.trim();
+  if(!msg) return;
+  const messages = document.getElementById('ai-messages');
+  
+  const userDiv = document.createElement('div');
+  userDiv.className = 'ai-msg user';
+  userDiv.textContent = msg;
+  messages.appendChild(userDiv);
+  
+  input.value = '';
+  
+  const thinking = document.createElement('div');
+  thinking.className = 'ai-msg ai';
+  thinking.innerHTML = '✦ <em style="color:var(--muted)">Planning your day...</em>';
+  messages.appendChild(thinking);
+  messages.scrollTop = messages.scrollHeight;
+  
+  setTimeout(() => {
+    const resp = AI_RESPONSES[Math.floor(Math.random()*AI_RESPONSES.length)](msg);
+    thinking.innerHTML = resp.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+    messages.scrollTop = messages.scrollHeight;
+  }, 1200);
+}
+
+function showComplete() {
+  const d = DAYS[state.currentDay];
+  document.getElementById('complete-tape-bg').style.background = `linear-gradient(135deg, ${d.color}cc, ${d.color}88)`;
+  document.getElementById('complete-dayname').textContent = d.name.toUpperCase();
+  document.getElementById('complete-title').textContent = `${d.name} Complete!`;
+  
+  // Confetti
+  const c = document.getElementById('confetti-container');
+  c.innerHTML = '';
+  const colors = ['#8B5CF6','#EC4899','#F59E0B','#10B981','#3B82F6','#EF4444','#F97316'];
+  for(let i=0;i<12;i++) {
+    const dot = document.createElement('div');
+    dot.className='confetti-dot';
+    dot.style.cssText = `background:${colors[i%colors.length]};left:${Math.random()*100}%;animation-delay:${Math.random()*2}s;animation-duration:${1.5+Math.random()}s`;
+    c.appendChild(dot);
+  }
+  
+  document.getElementById('complete-overlay').classList.add('show');
+}
+function closeComplete() { document.getElementById('complete-overlay').classList.remove('show'); }
+
+function showNotif(msg) {
+  const n = document.getElementById('notif');
+  document.getElementById('notif-text').textContent = msg;
+  n.classList.add('show');
+  setTimeout(()=>n.classList.remove('show'), 2500);
+}
+
+// Init
+updateTimerDisplay();
+</script>
+</body>
+</html>
