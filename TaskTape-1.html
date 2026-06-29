@@ -1,0 +1,1408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TaskTape — Your Week. Your Mixtape.</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+:root {
+  --bg:#0D1117; --s1:#161B22; --s2:#1C2330;
+  --border:rgba(255,255,255,0.07); --text:#E6EDF3; --muted:#8B949E;
+  --accent:#a855f7; --gold:#FFD700;
+  --mon:#a855f7; --tue:#ec4899; --wed:#d97706;
+  --thu:#059669; --fri:#ea580c; --sat:#2563eb; --sun:#dc2626;
+  --p-mon:#e9d5ff; --p-tue:#fbcfe8; --p-wed:#fef08a;
+  --p-thu:#bbf7d0; --p-fri:#fed7aa; --p-sat:#bfdbfe; --p-sun:#fecaca;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);cursor:none}
+h1,h2,h3,.serif{font-family:'DM Serif Display',serif}
+.mono{font-family:'Space Mono',monospace}
+.grotesk{font-family:'Space Grotesk',sans-serif}
+
+/* ═══ CURSOR ═══ */
+#c-dot{position:fixed;width:9px;height:9px;background:#a855f7;border-radius:50%;pointer-events:none;z-index:99999;transform:translate(-50%,-50%);transition:transform 0.08s,background 0.2s,width 0.2s,height 0.2s;mix-blend-mode:screen}
+#c-ring{position:fixed;width:34px;height:34px;border:2px solid rgba(168,85,247,0.55);border-radius:50%;pointer-events:none;z-index:99998;transform:translate(-50%,-50%);transition:width 0.3s,height 0.3s,opacity 0.2s;mix-blend-mode:screen}
+.trail{position:fixed;border-radius:50%;pointer-events:none;z-index:99990;transform:translate(-50%,-50%);animation:trailFade 0.7s ease forwards}
+@keyframes trailFade{0%{opacity:0.9;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(0)}}
+
+/* ═══ LANDING ═══ */
+#landing{
+  position:fixed;inset:0;z-index:500;overflow:hidden;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:linear-gradient(160deg,#fdf4ff 0%,#fce7f3 18%,#ede9fe 38%,#dbeafe 58%,#d1fae5 78%,#fef9c3 100%);
+  transition:opacity 0.8s cubic-bezier(0.4,0,0.2,1),transform 0.8s cubic-bezier(0.4,0,0.2,1);
+}
+#landing.out{opacity:0;pointer-events:none;transform:scale(1.06) translateY(-16px)}
+
+/* Animated blobs */
+.blob{position:absolute;border-radius:50%;filter:blur(70px);pointer-events:none;opacity:0.45}
+.b1{width:500px;height:500px;background:radial-gradient(#c4b5fd,#f9a8d4);top:-150px;left:-150px;animation:bf 9s ease-in-out infinite}
+.b2{width:420px;height:420px;background:radial-gradient(#6ee7b7,#93c5fd);bottom:-100px;right:-100px;animation:bf 11s ease-in-out infinite reverse}
+.b3{width:300px;height:300px;background:radial-gradient(#fde68a,#fdba74);top:40%;left:-80px;animation:bf 13s ease-in-out infinite 2s}
+.b4{width:350px;height:350px;background:radial-gradient(#f9a8d4,#fca5a5);bottom:-60px;left:35%;animation:bf 10s ease-in-out infinite 4s}
+.b5{width:250px;height:250px;background:radial-gradient(#c4b5fd,#93c5fd);top:5%;right:12%;animation:bf 8s ease-in-out infinite 1s}
+@keyframes bf{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(25px,-25px) scale(1.06)}66%{transform:translate(-18px,18px) scale(0.96)}}
+
+/* Floating particles */
+.fp{position:absolute;pointer-events:none;animation:fpAnim linear infinite;opacity:0}
+@keyframes fpAnim{0%{transform:translateY(105vh) rotate(0deg);opacity:0}5%{opacity:0.7}90%{opacity:0.7}100%{transform:translateY(-10vh) rotate(360deg);opacity:0}}
+
+/* Stars/glitter */
+.gl{position:absolute;border-radius:50%;pointer-events:none;animation:glAnim ease-in-out infinite}
+@keyframes glAnim{0%,100%{opacity:0;transform:scale(0.3)}50%{opacity:1;transform:scale(1)}}
+
+/* Drifting music notes */
+.mn{position:absolute;pointer-events:none;font-size:18px;animation:mnDrift ease-in-out infinite;opacity:0.2}
+@keyframes mnDrift{0%,100%{transform:translateY(0) rotate(-8deg)}50%{transform:translateY(-14px) rotate(8deg)}}
+
+/* Landing glass card */
+.lg-card{
+  position:relative;z-index:10;
+  background:rgba(255,255,255,0.52);
+  backdrop-filter:blur(28px) saturate(1.4);
+  -webkit-backdrop-filter:blur(28px) saturate(1.4);
+  border:1.5px solid rgba(255,255,255,0.75);
+  border-radius:36px;
+  padding:52px 68px 48px;
+  text-align:center;
+  box-shadow:0 12px 60px rgba(168,85,247,0.14),0 2px 0 rgba(255,255,255,0.85) inset,0 -1px 0 rgba(168,85,247,0.1) inset;
+  max-width:700px;width:92%;
+  animation:cardIn 1s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+@keyframes cardIn{from{opacity:0;transform:translateY(50px) scale(0.9)}to{opacity:1;transform:none}}
+
+.lg-logo{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:6px;animation:fadeUp 0.7s 0.2s both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+.lg-logo-txt{font-family:'DM Serif Display',serif;font-size:34px;background:linear-gradient(135deg,#7c3aed,#db2777);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.lg-byline{font-family:'Space Mono',monospace;font-size:9px;color:#7c3aed;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:38px;opacity:0.6;animation:fadeUp 0.7s 0.3s both}
+
+.lg-h1{font-family:'DM Serif Display',serif;line-height:1.05;margin-bottom:14px}
+.lg-h1 .l1{font-size:clamp(44px,6.5vw,82px);background:linear-gradient(135deg,#6d28d9,#be185d);-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:block;animation:fadeUp 0.7s 0.4s both}
+.lg-h1 .l2{font-size:clamp(44px,6.5vw,82px);background:linear-gradient(135deg,#be185d,#b45309);-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:block;animation:fadeUp 0.7s 0.55s both}
+.lg-sub{font-size:16px;color:#6b21a8;opacity:0.75;margin-bottom:44px;animation:fadeUp 0.7s 0.7s both;font-weight:400}
+
+/* LANDING CASSETTE SHELF */
+.lg-shelf{display:flex;gap:12px;justify-content:center;margin-bottom:46px;perspective:1200px;animation:fadeUp 0.7s 0.85s both}
+
+.lt{
+  width:86px;height:58px;border-radius:11px;
+  position:relative;cursor:none;overflow:hidden;
+  transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1),box-shadow 0.3s;
+  box-shadow:0 5px 15px rgba(0,0,0,0.18),0 1px 0 rgba(255,255,255,0.5) inset;
+  animation:tapeIn 0.6s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.lt:hover{transform:translateY(-18px) rotateX(10deg) scale(1.1)!important;z-index:10}
+.lt:hover .lt-sparkle{opacity:1;transform:scale(1)}
+@keyframes tapeIn{from{opacity:0;transform:translateY(40px) scale(0.8)}to{opacity:1;transform:none}}
+
+/* SVG tape illustrations */
+.lt svg{position:absolute;inset:0;width:100%;height:100%}
+.lt-window{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:48px;height:15px;background:rgba(0,0,0,0.28);border-radius:4px;display:flex;align-items:center;justify-content:space-around;padding:0 7px;backdrop-filter:blur(2px)}
+.lt-reel{width:11px;height:11px;border-radius:50%;background:rgba(0,0,0,0.45);border:1.5px solid rgba(255,255,255,0.28);transition:transform 0.3s}
+.lt:hover .lt-reel{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.lt-label{position:absolute;bottom:5px;left:0;right:0;text-align:center;font-family:'Space Mono',monospace;font-size:7px;font-weight:700;color:rgba(255,255,255,0.95);letter-spacing:1px;text-shadow:0 1px 3px rgba(0,0,0,0.4)}
+.lt-sparkle{position:absolute;top:3px;right:4px;font-size:10px;opacity:0;transform:scale(0);transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1)}
+.lt-deco{position:absolute;font-size:9px;opacity:0.7;pointer-events:none}
+
+/* CTA */
+.lg-cta{
+  display:inline-flex;align-items:center;gap:10px;
+  padding:17px 56px;border-radius:50px;border:none;
+  background:linear-gradient(135deg,#7c3aed,#db2777);
+  color:#fff;font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700;
+  cursor:none;letter-spacing:0.3px;
+  box-shadow:0 8px 36px rgba(109,40,217,0.45),0 2px 0 rgba(255,255,255,0.25) inset;
+  transition:all 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  animation:fadeUp 0.7s 1s both;position:relative;overflow:hidden;
+}
+.lg-cta::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.15),transparent);border-radius:50px}
+.lg-cta:hover{transform:translateY(-5px) scale(1.05);box-shadow:0 18px 52px rgba(109,40,217,0.55)}
+.cta-spark{display:inline-block;animation:sparkSpin 2.5s linear infinite}
+@keyframes sparkSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+
+/* Vinyl deco behind card */
+.vinyl-ring{position:absolute;border-radius:50%;border:2px solid;pointer-events:none;animation:vinylRot linear infinite}
+@keyframes vinylRot{from{transform:translate(-50%,-50%) rotate(0)}to{transform:translate(-50%,-50%) rotate(360deg)}}
+
+/* ═══ APP SHELL ═══ */
+#app{display:none;height:100vh}
+.app-wrap{display:flex;height:100vh;overflow:hidden}
+
+/* ═══ SIDEBAR ═══ */
+.sb{width:232px;min-width:232px;background:var(--s1);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.sb-head{padding:18px 16px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.sb-logo-txt{font-family:'DM Serif Display',serif;font-size:20px;background:linear-gradient(135deg,#a855f7,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sb-logo-sub{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px}
+.sb-section-lbl{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;padding:12px 16px 6px}
+.sb-list{overflow-y:auto;flex:1;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.06) transparent}
+
+.nt{display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:none;position:relative;transition:background 0.2s}
+.nt:hover{background:rgba(255,255,255,0.04)}
+.nt.on{background:rgba(168,85,247,0.1)}
+.nt.on::before{content:'';position:absolute;left:0;top:6px;bottom:6px;width:3px;background:var(--dc);border-radius:0 2px 2px 0}
+
+/* Mini illustrated cassette in sidebar */
+.nt-tape{width:44px;height:28px;border-radius:6px;position:relative;overflow:hidden;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,0.35)}
+.nt-tape svg{position:absolute;inset:0;width:100%;height:100%}
+.nt-win{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:26px;height:9px;background:rgba(0,0,0,0.35);border-radius:2px;display:flex;align-items:center;justify-content:space-around;padding:0 4px}
+.nt-r{width:5px;height:5px;border-radius:50%;background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.2)}
+.nt-info{flex:1;min-width:0}
+.nt-day{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px}
+.nt-pct{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted)}
+.nt-ring{width:24px;height:24px;flex-shrink:0}
+
+.sb-bot{padding:14px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px}
+.streak-box{display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.15);border-radius:13px}
+.streak-n{font-family:'Space Mono',monospace;font-size:22px;font-weight:700;color:#f97316}
+.streak-s{font-size:9px;color:var(--muted)}
+.sb-btns{display:flex;gap:7px}
+.sb-b{flex:1;padding:8px;border-radius:10px;border:1px solid var(--border);background:var(--s2);color:var(--muted);cursor:none;font-size:12px;font-family:'Space Grotesk',sans-serif;transition:all 0.2s}
+.sb-b:hover{border-color:var(--accent);color:var(--accent)}
+.sb-bdone{flex:1;padding:8px;border-radius:10px;border:none;background:linear-gradient(135deg,#a855f7,#6366f1);color:#fff;cursor:none;font-size:11px;font-weight:700;font-family:'Space Grotesk',sans-serif;transition:all 0.2s}
+.sb-bdone:hover{filter:brightness(1.15)}
+
+/* ═══ MAIN ═══ */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* TOPBAR */
+.topbar{padding:13px 22px;border-bottom:1px solid var(--border);background:var(--s1);display:flex;align-items:center;gap:13px}
+.tb-nav{background:none;border:1px solid var(--border);border-radius:8px;padding:5px 10px;color:var(--muted);cursor:none;font-size:13px;transition:all 0.2s}
+.tb-nav:hover{border-color:var(--accent);color:var(--accent)}
+.tb-badge{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:3px 10px;font-family:'Space Mono',monospace;font-size:10px}
+.tb-day{font-family:'DM Serif Display',serif;font-size:24px;transition:color 0.4s}
+.tb-date{color:var(--muted);font-size:11px}
+.tb-sp{flex:1}
+.tb-act{background:none;border:1px solid var(--border);border-radius:9px;padding:6px 13px;color:var(--muted);cursor:none;font-size:11px;font-family:'Space Grotesk',sans-serif;transition:all 0.2s}
+.tb-act:hover{border-color:var(--accent);color:var(--accent)}
+.eq-icon{display:inline-flex;align-items:flex-end;gap:2px;height:14px;margin-left:4px}
+.eq-bar{width:3px;border-radius:1px;background:var(--accent);animation:eqDance 0.8s ease-in-out infinite}
+@keyframes eqDance{0%,100%{height:3px}50%{height:12px}}
+
+/* CONTENT GRID */
+.cg{flex:1;display:grid;grid-template-columns:1fr 316px;overflow:hidden}
+.cc{overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:14px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.05) transparent}
+.rc{overflow-y:auto;padding:18px;border-left:1px solid var(--border);display:flex;flex-direction:column;gap:13px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.05) transparent}
+
+/* ═══ CARDS ═══ */
+.card{background:var(--s1);border:1px solid var(--border);border-radius:18px;padding:17px}
+.card-title{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:7px}
+.card-cnt{background:var(--s2);padding:1px 7px;border-radius:20px;font-size:9px}
+
+/* ═══ CASSETTE HERO ═══ */
+.ch{display:flex;gap:20px;align-items:center}
+.ch-tape{
+  width:200px;height:134px;border-radius:16px;flex-shrink:0;position:relative;overflow:hidden;
+  box-shadow:0 10px 40px rgba(0,0,0,0.5),0 2px 0 rgba(255,255,255,0.12) inset,0 -2px 0 rgba(0,0,0,0.3) inset;
+  animation:tapeHeroIn 0.7s cubic-bezier(0.34,1.56,0.64,1) both;
+  cursor:none;transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1),box-shadow 0.3s;
+}
+.ch-tape:hover{transform:translateY(-6px) rotateX(4deg) scale(1.03);box-shadow:0 20px 50px rgba(0,0,0,0.6)}
+.ch-tape:hover .ch-sparkles{opacity:1}
+@keyframes tapeHeroIn{from{opacity:0;transform:rotateY(-25deg) scale(0.75) translateX(-30px)}to{opacity:1;transform:none}}
+.ch-tape-bg{position:absolute;inset:0}
+.ch-tape-shine{position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.18) 0%,transparent 55%);pointer-events:none;border-radius:16px}
+.ch-tape-screw{position:absolute;width:10px;height:10px;border-radius:50%;background:linear-gradient(135deg,rgba(255,255,255,0.3),rgba(0,0,0,0.4));border:1.5px solid rgba(255,255,255,0.15);box-shadow:0 1px 3px rgba(0,0,0,0.5)}
+.ch-label{position:absolute;top:18px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,0.18);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,0.25);border-radius:6px;padding:4px 12px;text-align:center;min-width:100px}
+.ch-num{font-family:'Space Mono',monospace;font-size:9px;opacity:0.8;margin-bottom:2px}
+.ch-dname{font-family:'DM Serif Display',serif;font-size:15px;color:#fff;letter-spacing:1px;text-shadow:0 1px 6px rgba(0,0,0,0.5)}
+.ch-reels{position:absolute;bottom:14px;left:0;right:0;display:flex;justify-content:center;gap:36px}
+.reel{width:32px;height:32px;border-radius:50%;position:relative;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 35% 35%,rgba(255,255,255,0.25),rgba(0,0,0,0.6));
+  border:2.5px solid rgba(255,255,255,0.22);
+  box-shadow:0 3px 10px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.15)}
+.reel::before{content:'';width:12px;height:12px;border-radius:50%;background:radial-gradient(circle at 40% 40%,rgba(255,255,255,0.2),rgba(0,0,0,0.7));border:2px solid rgba(255,255,255,0.18)}
+.reel::after{content:'';position:absolute;width:20px;height:1px;background:rgba(255,255,255,0.12);top:50%;left:50%;transform:translate(-50%,-50%) rotate(45deg)}
+.reel.spin{animation:reelSpin 2s linear infinite}
+@keyframes reelSpin{to{transform:rotate(360deg)}}
+.ch-sparkles{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity 0.3s}
+.sparkle-dot{position:absolute;border-radius:50%;animation:sparklePop 0.6s ease-out infinite}
+@keyframes sparklePop{0%,100%{transform:scale(0);opacity:0}50%{transform:scale(1);opacity:1}}
+
+.ch-info{flex:1}
+.ch-info h2{font-family:'DM Serif Display',serif;font-size:22px;margin-bottom:2px}
+.ch-date{color:var(--muted);font-size:11px;margin-bottom:15px}
+.prog-lbl{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:5px}
+.prog-num{font-family:'Space Grotesk',sans-serif;font-weight:700}
+/* Cassette-ribbon progress bar */
+.ribbon-track{height:10px;background:var(--s2);border-radius:5px;overflow:hidden;margin-bottom:14px;position:relative;border:1px solid rgba(255,255,255,0.05)}
+.ribbon-fill{height:100%;border-radius:5px;transition:width 1s cubic-bezier(0.34,1.56,0.64,1);position:relative;overflow:hidden}
+.ribbon-fill::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,rgba(0,0,0,0.12) 0px,rgba(0,0,0,0.12) 2px,transparent 2px,transparent 6px);border-radius:5px}
+.stats-r{display:flex;gap:24px;margin-bottom:16px}
+.sv{font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:700}
+.sl{font-size:10px;color:var(--muted)}
+.play-btn{
+  display:inline-flex;align-items:center;gap:9px;
+  padding:12px 30px;border-radius:50px;border:none;color:#fff;
+  font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;cursor:none;
+  letter-spacing:0.8px;transition:all 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  position:relative;overflow:hidden;
+}
+.play-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.18),transparent)}
+.play-btn:hover{transform:translateY(-4px) scale(1.05);filter:brightness(1.15)}
+
+/* ═══ MOOD ═══ */
+.mood-row{display:flex;gap:7px}
+.mb{flex:1;padding:9px 4px;border-radius:13px;border:1px solid var(--border);background:var(--s2);display:flex;flex-direction:column;align-items:center;gap:4px;cursor:none;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1)}
+.mb:hover{transform:translateY(-5px) scale(1.06);border-color:var(--accent)}
+.mb.on{border-color:var(--accent);background:rgba(168,85,247,0.14);box-shadow:0 5px 18px rgba(168,85,247,0.2)}
+.me{font-size:23px}
+.ml{font-family:'Space Mono',monospace;font-size:8px;color:var(--muted)}
+
+/* ═══ THOUGHT ═══ */
+.tw{position:relative}
+.tpin{position:absolute;top:-8px;left:50%;transform:translateX(-50%);width:14px;height:14px;background:#ef4444;border-radius:50%;border:2.5px solid #b91c1c;z-index:2;box-shadow:0 3px 10px rgba(239,68,68,0.5)}
+.tc{background:linear-gradient(145deg,#fef9c3,#fef3c7);border-radius:17px;padding:18px;position:relative;overflow:hidden;box-shadow:0 5px 20px rgba(0,0,0,0.15)}
+.tc::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='3' height='3'%3E%3Crect width='1' height='1' fill='rgba(0,0,0,0.04)'/%3E%3C/svg%3E")}
+.tc-lbl{font-family:'Space Mono',monospace;font-size:8px;font-weight:700;color:#92400e;letter-spacing:2px;text-transform:uppercase;margin-bottom:7px;position:relative}
+.tc-txt{font-family:'DM Serif Display',serif;font-size:15px;color:#1c1917;line-height:1.55;font-style:italic;position:relative}
+
+/* ═══ KANBAN ═══ */
+.kb{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.kc{background:var(--s1);border:1px solid var(--border);border-radius:15px;padding:12px;min-height:180px;transition:background 0.2s,border-color 0.2s}
+.kc.over{background:rgba(168,85,247,0.06);border-color:rgba(168,85,247,0.3)}
+.kch{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+.kct{font-size:10px;font-weight:700;letter-spacing:0.3px}
+.kcc{background:var(--s2);width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-size:9px;color:var(--muted)}
+.tk{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:9px 11px;margin-bottom:6px;cursor:grab;transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1);animation:tkIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both}
+@keyframes tkIn{from{opacity:0;transform:translateY(12px) scale(0.94)}to{opacity:1;transform:none}}
+.tk:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,0.3)}
+.tk.dragging{opacity:0.35;transform:scale(0.94)}
+.tk-h{display:flex;align-items:flex-start;gap:7px;margin-bottom:5px}
+.tk-e{font-size:15px;flex-shrink:0;margin-top:1px}
+.tk-t{font-size:12px;font-weight:600;flex:1;line-height:1.3}
+.tk-check{width:16px;height:16px;border-radius:50%;border:2px solid var(--border);cursor:none;flex-shrink:0;margin-top:2px;transition:all 0.3s;display:flex;align-items:center;justify-content:center;font-size:10px}
+.tk-check.done{background:var(--accent);border-color:var(--accent);animation:checkPop 0.4s cubic-bezier(0.34,1.56,0.64,1)}
+@keyframes checkPop{0%{transform:scale(0)}60%{transform:scale(1.3)}100%{transform:scale(1)}}
+.tk-m{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.tk-tag{font-size:8px;padding:2px 6px;border-radius:8px;background:rgba(255,255,255,0.06);font-family:'Space Mono',monospace}
+.tk-dur{font-size:8px;color:var(--muted);font-family:'Space Mono',monospace}
+.tk-imgs{display:flex;gap:4px;margin-top:5px;flex-wrap:wrap}
+.tk-img{width:38px;height:38px;border-radius:6px;object-fit:cover;border:1px solid var(--border);cursor:none;transition:all 0.2s}
+.tk-img:hover{transform:scale(1.15);box-shadow:0 4px 12px rgba(0,0,0,0.4)}
+.add-tk-btn{width:100%;padding:7px;border:1.5px dashed rgba(255,255,255,0.09);border-radius:8px;background:none;color:var(--muted);font-size:10px;cursor:none;font-family:'Space Grotesk',sans-serif;transition:all 0.2s}
+.add-tk-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ═══ WEEK SHELF ═══ */
+.ws{display:flex;gap:8px;padding:14px;align-items:flex-end;background:linear-gradient(180deg,#3d2314,#2a1508);border-radius:13px;position:relative;min-height:86px}
+.ws::after{content:'';position:absolute;bottom:0;left:0;right:0;height:9px;background:linear-gradient(180deg,#9B6A3C,#6B4423);border-radius:0 0 13px 13px}
+.wt{flex:1;min-width:0;height:62px;border-radius:7px;cursor:none;position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1),box-shadow 0.3s}
+.wt:hover{transform:translateY(-14px);box-shadow:0 18px 36px rgba(0,0,0,0.55),0 0 20px var(--sc,#a855f7)}
+.wt svg{position:absolute;inset:0;width:100%;height:100%}
+.wt-day{font-family:'Space Mono',monospace;font-size:7px;font-weight:700;color:rgba(255,255,255,0.9);writing-mode:vertical-rl;position:relative;z-index:1;text-shadow:0 1px 3px rgba(0,0,0,0.5)}
+.wt-prog{width:72%;height:3px;background:rgba(0,0,0,0.3);border-radius:2px;margin:3px 0;position:relative;z-index:1}
+.wt-fill{height:100%;border-radius:2px;background:rgba(255,255,255,0.55);transition:width 0.8s ease}
+.wt-star{position:absolute;top:2px;right:3px;font-size:11px;z-index:2;animation:starPulse 2s ease-in-out infinite}
+@keyframes starPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
+
+/* ═══ STATS ═══ */
+.sg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sbox{background:var(--s2);border:1px solid var(--border);border-radius:13px;padding:13px}
+.sn{font-family:'Space Grotesk',sans-serif;font-size:21px;font-weight:700;margin-bottom:2px}
+.ss{font-size:9px;color:var(--muted)}
+
+/* ═══ WALKMAN TIMER ═══ */
+.walkman{background:linear-gradient(180deg,#2a2a3e,#1a1a2e);border-radius:20px;padding:20px;border:1px solid rgba(168,85,247,0.2);box-shadow:0 8px 32px rgba(168,85,247,0.1)}
+.wk-body{background:linear-gradient(180deg,#252540,#1c1c30);border-radius:14px;padding:16px;margin-bottom:14px;border:1px solid rgba(255,255,255,0.05);position:relative;overflow:hidden}
+.wk-screen{background:linear-gradient(180deg,#0a1628,#0d1f3c);border-radius:10px;padding:12px;margin-bottom:12px;border:1px solid rgba(100,149,237,0.2);position:relative;overflow:hidden}
+.wk-screen::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(100,149,237,0.06),transparent);border-radius:10px}
+.wk-track-lbl{font-family:'Space Mono',monospace;font-size:8px;color:#6495ed;letter-spacing:2px;margin-bottom:4px;animation:marquee 8s linear infinite;white-space:nowrap}
+@keyframes marquee{0%{transform:translateX(100%)}100%{transform:translateX(-100%)}}
+.wk-time{font-family:'Space Mono',monospace;font-size:36px;font-weight:700;color:#e0e8ff;letter-spacing:3px;text-align:center;text-shadow:0 0 20px rgba(100,149,237,0.5)}
+.wk-reels-row{display:flex;justify-content:center;gap:40px;margin-top:10px}
+.wk-reel{width:22px;height:22px;border-radius:50%;background:radial-gradient(circle at 35% 35%,rgba(255,255,255,0.2),rgba(0,0,0,0.7));border:2px solid rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center}
+.wk-reel::before{content:'';width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18)}
+.wk-reel.spin{animation:reelSpin 1.4s linear infinite}
+/* Walkman tape slot */
+.wk-slot{width:80%;height:8px;background:rgba(0,0,0,0.5);border-radius:4px;margin:8px auto 0;border:1px solid rgba(255,255,255,0.08);overflow:hidden;position:relative}
+.wk-slot-fill{height:100%;background:linear-gradient(90deg,#a855f7,#6366f1);border-radius:4px;transition:width 1s ease;position:relative;overflow:hidden}
+.wk-slot-fill::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,rgba(0,0,0,0.15) 0,rgba(0,0,0,0.15) 2px,transparent 2px,transparent 5px)}
+/* Walkman buttons */
+.wk-controls{display:flex;justify-content:center;gap:8px;margin-bottom:10px}
+.wk-btn{width:36px;height:36px;border-radius:50%;border:none;background:linear-gradient(180deg,#3a3a5c,#252540);color:rgba(255,255,255,0.7);cursor:none;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all 0.2s;box-shadow:0 3px 8px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.1)}
+.wk-btn:hover{background:linear-gradient(180deg,#4a4a7c,#353560);color:#fff;transform:translateY(-1px)}
+.wk-btn:active{transform:translateY(1px);box-shadow:0 1px 4px rgba(0,0,0,0.4)}
+.wk-btn.big{width:44px;height:44px;background:linear-gradient(180deg,#a855f7,#6366f1);color:#fff;box-shadow:0 4px 14px rgba(168,85,247,0.5)}
+.wk-btn.big:hover{filter:brightness(1.15)}
+.mode-row{display:flex;gap:6px;margin-bottom:11px}
+.mode-t{flex:1;padding:6px;border-radius:8px;border:1px solid var(--border);background:var(--s2);color:var(--muted);font-size:9px;font-weight:700;cursor:none;transition:all 0.2s;font-family:'Space Grotesk',sans-serif;letter-spacing:0.5px}
+.mode-t.on{background:linear-gradient(135deg,#a855f7,#6366f1);border-color:transparent;color:#fff}
+.vibe-g{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+.vb{aspect-ratio:1;border-radius:10px;border:1px solid var(--border);background:var(--s2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:none;transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1);font-size:15px}
+.vb-l{font-size:7px;color:var(--muted)}
+.vb:hover{border-color:var(--accent);transform:translateY(-3px) scale(1.06)}
+.vb.on{border-color:var(--accent);background:rgba(168,85,247,0.14)}
+
+/* ═══ MUSIC ═══ */
+.music-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.music-art{width:44px;height:44px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:22px;background:linear-gradient(135deg,#1db954,#191414);box-shadow:0 4px 14px rgba(0,0,0,0.4);position:relative;overflow:hidden}
+.music-art::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.15),transparent)}
+.music-info{flex:1;min-width:0}
+.music-tk{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.music-ar{font-size:10px;color:var(--muted)}
+.music-ctrl{display:flex;align-items:center;gap:3px}
+.mc{background:none;border:none;color:var(--muted);cursor:none;font-size:12px;padding:4px;transition:color 0.2s}
+.mc:hover{color:var(--text)}
+.mc-p{width:30px;height:30px;border-radius:50%;background:#1db954;color:#fff;border:none;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:none;transition:all 0.2s;box-shadow:0 3px 10px rgba(29,185,84,0.4)}
+.mc-p:hover{transform:scale(1.12);filter:brightness(1.1)}
+.eq-mini{display:inline-flex;align-items:flex-end;gap:2px;height:12px;margin-left:2px}
+.eq-b{width:2px;border-radius:1px;background:#1db954}
+.spotify-btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 12px;border-radius:10px;border:1px solid #1db954;background:rgba(29,185,84,0.08);color:#1db954;font-size:11px;font-weight:700;text-decoration:none;font-family:'Space Grotesk',sans-serif;transition:all 0.2s;cursor:none}
+.spotify-btn:hover{background:rgba(29,185,84,0.18);transform:translateY(-2px);box-shadow:0 6px 20px rgba(29,185,84,0.2)}
+
+/* ═══ AI ═══ */
+.ai-wrap{display:flex;flex-direction:column;height:290px}
+.ai-hd{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.ai-ic{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#a855f7,#06b6d4);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;animation:aiPulse 3s ease-in-out infinite}
+@keyframes aiPulse{0%,100%{box-shadow:0 0 0 0 rgba(168,85,247,0.4)}50%{box-shadow:0 0 0 8px rgba(168,85,247,0)}}
+.ai-n{font-family:'DM Serif Display',serif;font-size:15px}
+.ai-s{font-family:'Space Mono',monospace;font-size:8px;color:var(--muted)}
+.ai-msgs{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:7px;margin-bottom:8px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.04) transparent}
+.ai-m{padding:8px 11px;border-radius:12px;font-size:11px;line-height:1.5;max-width:94%;animation:tkIn 0.3s ease}
+.ai-m.u{background:rgba(168,85,247,0.17);border:1px solid rgba(168,85,247,0.25);align-self:flex-end}
+.ai-m.a{background:var(--s2);border:1px solid var(--border);align-self:flex-start;color:var(--muted)}
+.ai-m.a strong{color:var(--text)}
+.ai-r{display:flex;gap:6px}
+.ai-i{flex:1;padding:7px 11px;border:1px solid var(--border);border-radius:9px;background:var(--s2);color:var(--text);font-size:11px;font-family:'Inter',sans-serif;outline:none;cursor:text;transition:border-color 0.2s}
+.ai-i:focus{border-color:var(--accent)}
+.ai-send{width:32px;height:32px;border-radius:9px;border:none;background:var(--accent);color:#fff;cursor:none;font-size:13px;transition:all 0.2s}
+.ai-send:hover{filter:brightness(1.1)}
+
+/* ═══ NOTES ═══ */
+.notes-ta{width:100%;height:88px;background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:9px;color:var(--text);font-family:'Inter',sans-serif;font-size:11px;resize:none;outline:none;cursor:text;transition:border-color 0.2s;line-height:1.55}
+.notes-ta:focus{border-color:var(--accent)}
+
+/* ═══ ATTACHMENTS ═══ */
+.att-g{display:flex;gap:7px;flex-wrap:wrap;margin-top:7px}
+.att-i{width:54px;height:54px;border-radius:8px;object-fit:cover;border:1px solid var(--border);cursor:none;transition:all 0.25s}
+.att-i:hover{transform:scale(1.12);box-shadow:0 5px 15px rgba(0,0,0,0.4)}
+.att-add-btn{width:54px;height:54px;border-radius:8px;border:1.5px dashed rgba(255,255,255,0.12);background:none;color:var(--muted);font-size:22px;cursor:none;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
+.att-add-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ═══ MODALS ═══ */
+.mbg{position:fixed;inset:0;background:rgba(0,0,0,0.65);backdrop-filter:blur(8px);z-index:800;display:none;align-items:center;justify-content:center}
+.mbg.open{display:flex;animation:fadeIn 0.2s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal{background:var(--s1);border:1px solid var(--border);border-radius:24px;padding:26px;position:relative;animation:mIn 0.4s cubic-bezier(0.34,1.56,0.64,1)}
+@keyframes mIn{from{opacity:0;transform:scale(0.82) translateY(24px)}to{opacity:1;transform:none}}
+.m-close{position:absolute;top:14px;right:14px;background:var(--s2);border:1px solid var(--border);border-radius:8px;width:28px;height:28px;color:var(--muted);cursor:none;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
+.m-close:hover{border-color:var(--accent);color:var(--accent)}
+.m-title{font-family:'DM Serif Display',serif;font-size:20px;margin-bottom:18px}
+.fg{margin-bottom:12px}
+.fl{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:5px;display:block}
+.fi{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:10px;background:var(--s2);color:var(--text);font-size:13px;font-family:'Inter',sans-serif;outline:none;cursor:text;transition:border-color 0.2s}
+.fi:focus{border-color:var(--accent)}
+.f-row{display:flex;gap:9px}
+.f-row .fg{flex:1}
+.m-acts{display:flex;gap:8px;margin-top:16px}
+.btn-c{flex:1;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--s2);color:var(--muted);cursor:none;font-family:'Space Grotesk',sans-serif;font-size:13px;transition:all 0.2s}
+.btn-s{flex:1;padding:10px;border-radius:10px;border:none;background:var(--accent);color:#fff;cursor:none;font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;transition:all 0.2s}
+.btn-s:hover{filter:brightness(1.1)}
+
+/* Img preview */
+.ip-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.ip-thumb{width:44px;height:44px;border-radius:7px;object-fit:cover;border:1px solid var(--border);position:relative;display:inline-block}
+.ip-rm{position:absolute;top:-5px;right:-5px;width:15px;height:15px;border-radius:50%;background:#ef4444;color:#fff;font-size:9px;display:flex;align-items:center;justify-content:center;cursor:none;border:1px solid var(--s1)}
+.ip-add{width:44px;height:44px;border-radius:7px;border:1.5px dashed rgba(255,255,255,0.12);background:none;color:var(--muted);cursor:none;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
+.ip-add:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ═══ SETTINGS ═══ */
+.stg{width:460px}
+.stg-sec{margin-bottom:16px}
+.stg-lbl{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:9px}
+.stg-row{display:flex;align-items:center;justify-content:space-between;padding:10px;background:var(--s2);border:1px solid var(--border);border-radius:10px;margin-bottom:6px}
+.stg-rl{font-size:13px;font-family:'Inter',sans-serif}
+.stg-rs{font-size:9px;color:var(--muted)}
+.toggle{width:40px;height:22px;border-radius:11px;background:var(--s2);border:1px solid var(--border);position:relative;cursor:none;transition:background 0.3s;flex-shrink:0}
+.toggle.on{background:var(--accent);border-color:var(--accent)}
+.toggle::after{content:'';position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform 0.3s;box-shadow:0 1px 4px rgba(0,0,0,0.3)}
+.toggle.on::after{transform:translateX(18px)}
+.color-r{display:flex;gap:7px;align-items:center}
+.cdot{width:22px;height:22px;border-radius:50%;cursor:none;border:2.5px solid transparent;transition:all 0.2s}
+.cdot:hover,.cdot.sel{border-color:#fff;transform:scale(1.2)}
+.font-btn{padding:5px 11px;border-radius:8px;border:1px solid var(--border);background:var(--s1);color:var(--muted);font-size:11px;cursor:none;transition:all 0.2s;font-family:'Space Grotesk',sans-serif}
+.font-btn.sel{border-color:var(--accent);color:var(--accent);background:rgba(168,85,247,0.1)}
+
+/* ═══ COMPLETE ═══ */
+.co{position:fixed;inset:0;background:rgba(0,0,0,0.82);backdrop-filter:blur(10px);z-index:900;display:none;align-items:center;justify-content:center}
+.co.open{display:flex}
+.co-card{background:var(--s1);border:1px solid rgba(168,85,247,0.35);border-radius:30px;padding:46px;text-align:center;max-width:390px;animation:mIn 0.5s cubic-bezier(0.34,1.56,0.64,1);box-shadow:0 0 100px rgba(168,85,247,0.22);position:relative;overflow:hidden}
+.co-tape{width:140px;height:92px;border-radius:14px;margin:0 auto 22px;position:relative;overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,0.5)}
+.co-tape-bg{position:absolute;inset:0}
+.co-tape-sh{position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.18),transparent);border-radius:14px}
+.co-title{font-family:'DM Serif Display',serif;font-size:30px;margin-bottom:7px}
+.co-sub{color:var(--muted);font-size:13px;margin-bottom:25px;font-family:'Inter',sans-serif}
+.co-btn{padding:13px 38px;border-radius:50px;border:none;background:linear-gradient(135deg,#a855f7,#6366f1);color:#fff;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;cursor:none;transition:all 0.3s}
+.co-btn:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(168,85,247,0.45)}
+.confetti-b{position:absolute;border-radius:50%;animation:cFall linear infinite;pointer-events:none}
+@keyframes cFall{0%{transform:translateY(-20px) rotate(0);opacity:1}100%{transform:translateY(140px) rotate(720deg);opacity:0}}
+
+/* ═══ LIGHTBOX ═══ */
+.lb{position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:950;display:none;align-items:center;justify-content:center;cursor:none}
+.lb.open{display:flex;animation:fadeIn 0.2s ease}
+.lb img{max-width:90vw;max-height:90vh;border-radius:12px;box-shadow:0 0 80px rgba(0,0,0,0.9)}
+
+/* ═══ NOTIF ═══ */
+.notif{position:fixed;top:18px;right:18px;background:var(--s1);border:1px solid var(--accent);border-radius:14px;padding:10px 16px;font-size:12px;z-index:1000;pointer-events:none;display:flex;align-items:center;gap:7px;box-shadow:0 8px 32px rgba(168,85,247,0.25);opacity:0;transform:translateX(70px);transition:all 0.4s cubic-bezier(0.34,1.56,0.64,1);font-family:'Space Grotesk',sans-serif}
+.notif.show{opacity:1;transform:translateX(0)}
+
+/* ═══ SPARKLE BURST ═══ */
+.spark-burst{position:fixed;pointer-events:none;z-index:9999}
+.sb-p{position:absolute;border-radius:50%;animation:sbPop 0.6s ease-out forwards}
+@keyframes sbPop{0%{transform:translate(-50%,-50%) scale(1);opacity:1}100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(0);opacity:0}}
+</style>
+</head>
+<body>
+
+<!-- CURSOR -->
+<div id="c-dot"></div>
+<div id="c-ring"></div>
+
+<!-- LANDING -->
+<div id="landing">
+  <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+  <div class="blob b4"></div><div class="blob b5"></div>
+
+  <!-- Floating emojis -->
+  <div class="fp" style="left:6%;animation-duration:13s;font-size:20px">📼</div>
+  <div class="fp" style="left:16%;animation-duration:10s;animation-delay:-3s;font-size:18px">🎵</div>
+  <div class="fp" style="left:28%;animation-duration:15s;animation-delay:-7s;font-size:16px">✨</div>
+  <div class="fp" style="left:42%;animation-duration:11s;animation-delay:-2s;font-size:22px">🎶</div>
+  <div class="fp" style="left:57%;animation-duration:14s;animation-delay:-9s;font-size:18px">📼</div>
+  <div class="fp" style="left:70%;animation-duration:9s;animation-delay:-4s;font-size:20px">🌸</div>
+  <div class="fp" style="left:82%;animation-duration:12s;animation-delay:-6s;font-size:16px">⭐</div>
+  <div class="fp" style="left:91%;animation-duration:16s;animation-delay:-1s;font-size:19px">🎵</div>
+
+  <!-- Glitter -->
+  <div class="gl" style="left:14%;top:22%;width:9px;height:9px;background:#c4b5fd;animation-duration:2.2s"></div>
+  <div class="gl" style="left:80%;top:18%;width:7px;height:7px;background:#f9a8d4;animation-duration:1.6s;animation-delay:-0.5s"></div>
+  <div class="gl" style="left:33%;top:72%;width:11px;height:11px;background:#fde68a;animation-duration:2.7s;animation-delay:-1.1s"></div>
+  <div class="gl" style="left:68%;top:78%;width:8px;height:8px;background:#6ee7b7;animation-duration:1.9s;animation-delay:-0.3s"></div>
+  <div class="gl" style="left:52%;top:8%;width:10px;height:10px;background:#93c5fd;animation-duration:2.4s;animation-delay:-0.8s"></div>
+  <div class="gl" style="left:88%;top:55%;width:6px;height:6px;background:#fdba74;animation-duration:1.4s;animation-delay:-0.2s"></div>
+
+  <!-- Music notes -->
+  <div class="mn" style="left:4%;top:28%;animation-duration:3.5s">🎵</div>
+  <div class="mn" style="right:5%;top:32%;animation-duration:4.2s;animation-delay:-1.5s">🎶</div>
+  <div class="mn" style="left:9%;bottom:28%;animation-duration:3s;animation-delay:-0.8s;font-size:14px">♪</div>
+  <div class="mn" style="right:9%;bottom:22%;animation-duration:4.8s;animation-delay:-2.5s">♫</div>
+
+  <!-- Vinyl rings -->
+  <div class="vinyl-ring" style="width:260px;height:260px;border-color:rgba(168,85,247,0.06);left:80%;top:50%;animation-duration:18s"></div>
+  <div class="vinyl-ring" style="width:180px;height:180px;border-color:rgba(236,72,153,0.08);left:80%;top:50%;animation-duration:12s;animation-direction:reverse"></div>
+
+  <div class="lg-card">
+    <div class="lg-logo">
+      <svg width="42" height="42" viewBox="0 0 44 44" fill="none">
+        <path d="M4 36L14 12L22 28L30 16L36 28" stroke="url(#lg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="38" cy="8" r="3.5" fill="url(#lg)"/>
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="44" y2="44"><stop stop-color="#7c3aed"/><stop offset="1" stop-color="#db2777"/></linearGradient></defs>
+      </svg>
+      <div><div class="lg-logo-txt">TaskTape</div></div>
+    </div>
+    <div class="lg-byline">by manal_verse.co · Code · Design · AI · Future</div>
+
+    <div class="lg-h1">
+      <span class="l1">Your week.</span>
+      <span class="l2">Your mixtape.</span>
+    </div>
+    <p class="lg-sub">Plan your week one cassette at a time. 📼</p>
+
+    <div class="lg-shelf" id="lg-shelf"></div>
+
+    <button class="lg-cta" onclick="enterApp()">
+      <span class="cta-spark">✦</span>
+      Start Your Week
+      <span style="font-size:14px">▶</span>
+    </button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+<div class="app-wrap">
+
+<!-- SIDEBAR -->
+<div class="sb">
+  <div class="sb-head">
+    <svg width="28" height="28" viewBox="0 0 44 44" fill="none">
+      <path d="M4 36L14 12L22 28L30 16L36 28" stroke="url(#sl)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="38" cy="8" r="3" fill="url(#sl)"/>
+      <defs><linearGradient id="sl" x1="0" y1="0" x2="44" y2="44"><stop stop-color="#a855f7"/><stop offset="1" stop-color="#06b6d4"/></linearGradient></defs>
+    </svg>
+    <div><div class="sb-logo-txt">TaskTape</div><div class="sb-logo-sub">your week. your mix. 💜</div></div>
+  </div>
+  <div class="sb-section-lbl">Week Tapes</div>
+  <div class="sb-list" id="sb-list"></div>
+  <div class="sb-bot">
+    <div class="streak-box">
+      <div style="font-size:24px">🔥</div>
+      <div><div class="streak-n">7</div><div class="streak-s">day streak · keep going!</div></div>
+    </div>
+    <div class="sb-btns">
+      <button class="sb-b" onclick="openSettings()">⚙️ Settings</button>
+      <button class="sb-bdone" onclick="showComplete()">📼 Done!</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <button class="tb-nav" onclick="navDay(-1)">‹</button>
+    <div class="tb-badge" id="tb-badge">001</div>
+    <div class="tb-day" id="tb-day" style="color:#a855f7">MONDAY</div>
+    <div class="tb-date" id="tb-date"></div>
+    <div class="tb-sp"></div>
+    <div class="eq-icon" id="eq-icon" style="display:none">
+      <div class="eq-bar" style="animation-delay:0s"></div>
+      <div class="eq-bar" style="animation-delay:0.15s"></div>
+      <div class="eq-bar" style="animation-delay:0.3s"></div>
+      <div class="eq-bar" style="animation-delay:0.1s"></div>
+    </div>
+    <button class="tb-act" onclick="openSettings()">⚙️ Settings</button>
+    <button class="tb-act" id="tb-play-btn" onclick="togglePlay()">▶ Play Day</button>
+    <button class="tb-nav" onclick="navDay(1)">›</button>
+  </div>
+
+  <div class="cg">
+    <!-- CENTER -->
+    <div class="cc">
+
+      <!-- CASSETTE HERO -->
+      <div class="card" style="padding:18px">
+        <div class="ch">
+          <div class="ch-tape" id="ch-tape">
+            <div class="ch-tape-bg" id="ch-tape-bg"></div>
+            <div class="ch-tape-shine"></div>
+            <!-- Screws -->
+            <div class="ch-tape-screw" style="top:5px;left:5px"></div>
+            <div class="ch-tape-screw" style="top:5px;right:5px"></div>
+            <div class="ch-tape-screw" style="bottom:5px;left:5px"></div>
+            <div class="ch-tape-screw" style="bottom:5px;right:5px"></div>
+            <div class="ch-label">
+              <div class="ch-num" id="ch-num">001</div>
+              <div class="ch-dname" id="ch-dname">MONDAY</div>
+            </div>
+            <div class="ch-reels">
+              <div class="reel" id="rl"></div>
+              <div class="reel" id="rr"></div>
+            </div>
+            <div class="ch-sparkles" id="ch-sparkles">
+              <div class="sparkle-dot" style="width:6px;height:6px;background:#fff;top:8%;left:10%;animation-delay:0s;animation-duration:1.2s"></div>
+              <div class="sparkle-dot" style="width:5px;height:5px;background:#fde68a;top:15%;right:12%;animation-delay:0.3s;animation-duration:0.9s"></div>
+              <div class="sparkle-dot" style="width:7px;height:7px;background:#c4b5fd;bottom:15%;left:15%;animation-delay:0.6s;animation-duration:1.1s"></div>
+              <div class="sparkle-dot" style="width:4px;height:4px;background:#f9a8d4;bottom:20%;right:18%;animation-delay:0.1s;animation-duration:0.8s"></div>
+            </div>
+          </div>
+          <div style="flex:1">
+            <h2 id="ch-name" style="font-size:22px;margin-bottom:2px">Monday</h2>
+            <div class="ch-date" id="ch-date" style="color:var(--muted);font-size:11px;margin-bottom:14px"></div>
+            <div class="prog-lbl"><span>Progress</span><span class="prog-num" id="prog-pct">29%</span></div>
+            <div class="ribbon-track"><div class="ribbon-fill" id="prog-fill" style="width:29%;background:#a855f7"></div></div>
+            <div class="stats-r">
+              <div><div class="sv" id="si-focus" style="color:#a855f7">1h 24m</div><div class="sl">Focus Time</div></div>
+              <div><div class="sv" id="si-left">5</div><div class="sl">Tracks Left</div></div>
+            </div>
+            <button class="play-btn" id="play-btn" style="background:linear-gradient(135deg,#a855f7,#6366f1)" onclick="togglePlay()">
+              <span id="play-icon">▶</span><span id="play-txt">PLAY DAY</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- THOUGHT -->
+      <div class="tw">
+        <div class="tpin"></div>
+        <div class="tc">
+          <div class="tc-lbl">📌 Thought of the Day</div>
+          <div class="tc-txt" id="thought-txt">"Small progress every day leads to big results."</div>
+        </div>
+      </div>
+
+      <!-- MOOD -->
+      <div class="card">
+        <div class="card-title">Today's Vibe — How are you feeling?</div>
+        <div class="mood-row">
+          <div class="mb" onclick="pickMood(this,'Happy 😊')"><div class="me">😊</div><div class="ml">Happy</div></div>
+          <div class="mb" onclick="pickMood(this,'Calm 😌')"><div class="me">😌</div><div class="ml">Calm</div></div>
+          <div class="mb" onclick="pickMood(this,'Tired 😴')"><div class="me">😴</div><div class="ml">Tired</div></div>
+          <div class="mb" onclick="pickMood(this,'Stressed 😤')"><div class="me">😤</div><div class="ml">Stressed</div></div>
+          <div class="mb" onclick="pickMood(this,'Motivated 🔥')"><div class="me">🔥</div><div class="ml">Motivated</div></div>
+        </div>
+      </div>
+
+      <!-- TRACKS -->
+      <div>
+        <div class="card-title">🎵 Tracks <span class="card-cnt" id="total-cnt">11</span></div>
+        <div class="kb" id="kanban"></div>
+      </div>
+
+      <!-- ATTACHMENTS -->
+      <div class="card">
+        <div class="card-title">📎 Attachments</div>
+        <div class="att-g" id="att-grid">
+          <button class="att-add-btn" onclick="document.getElementById('att-file').click()">+</button>
+          <input type="file" id="att-file" style="display:none" accept="image/*" multiple onchange="addAtts(this)">
+        </div>
+      </div>
+
+      <!-- WEEK SHELF -->
+      <div class="card">
+        <div class="card-title">📼 Week View — Your 7 tapes. Your story. 💜</div>
+        <div class="ws" id="week-shelf"></div>
+      </div>
+
+      <!-- STATS -->
+      <div class="card">
+        <div class="card-title">📊 Tape Stats</div>
+        <div class="sg">
+          <div class="sbox"><div class="sn" style="color:#a855f7">8h 36m</div><div class="ss">Total Focus Time</div></div>
+          <div class="sbox"><div class="sn" style="color:#10B981" id="stat-done">4</div><div class="ss">Tracks Completed</div></div>
+          <div class="sbox"><div class="sn" style="color:#F97316" id="stat-rate">29%</div><div class="ss">Completion Rate</div></div>
+          <div class="sbox"><div class="sn" style="color:#F59E0B">7 🔥</div><div class="ss">Current Streak</div></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT -->
+    <div class="rc">
+
+      <!-- MUSIC -->
+      <div class="card">
+        <div class="card-title">🎵 Today's Mix</div>
+        <div class="music-row">
+          <div class="music-art">🎵</div>
+          <div class="music-info">
+            <div class="music-tk">lofi beats · chillhop<span class="eq-mini" id="eq-mini" style="display:none"><div class="eq-b" style="height:4px;animation:eqDance 0.6s infinite"></div><div class="eq-b" style="height:8px;animation:eqDance 0.8s 0.1s infinite"></div><div class="eq-b" style="height:5px;animation:eqDance 0.7s 0.2s infinite"></div></span></div>
+            <div class="music-ar">chillhop essentials</div>
+          </div>
+          <div class="music-ctrl">
+            <button class="mc">⏮</button>
+            <button class="mc-p" id="mc-p" onclick="toggleMusic()">▶</button>
+            <button class="mc">⏭</button>
+          </div>
+        </div>
+        <a class="spotify-btn" href="https://open.spotify.com/playlist/0vvXsWCC9xrXsKd4eEFDfe" target="_blank" rel="noopener">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="#1db954"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+          Open in Spotify
+        </a>
+      </div>
+
+      <!-- WALKMAN TIMER -->
+      <div class="walkman">
+        <div class="card-title" style="margin-bottom:10px">⏱ Focus Timer — Walkman Edition</div>
+        <div class="wk-body">
+          <div class="wk-screen">
+            <div class="wk-track-lbl" id="wk-lbl">◀◀ STUDYING PHYSICS · LAWS OF MOTION · POMODORO ▶▶</div>
+            <div class="wk-time" id="wk-time">25:00</div>
+            <div class="wk-reels-row">
+              <div class="wk-reel" id="wkrl"></div>
+              <div class="wk-reel" id="wkrr"></div>
+            </div>
+          </div>
+          <div class="wk-slot"><div class="wk-slot-fill" id="wk-slot" style="width:0%"></div></div>
+        </div>
+        <div class="wk-controls">
+          <button class="wk-btn" onclick="resetTimer()">⏮</button>
+          <button class="wk-btn big" id="wk-play-btn" onclick="toggleTimer()">▶</button>
+          <button class="wk-btn" onclick="">⏭</button>
+        </div>
+        <div class="mode-row">
+          <button class="mode-t on" onclick="setMode(this,25,'POMODORO')">Pomodoro</button>
+          <button class="mode-t" onclick="setMode(this,5,'SHORT BREAK')">Short Break</button>
+          <button class="mode-t" onclick="setMode(this,15,'LONG BREAK')">Long Break</button>
+        </div>
+        <div class="card-title" style="margin-bottom:7px">Choose your vibe</div>
+        <div class="vibe-g">
+          <button class="vb on" onclick="pickVibe(this)">🎵<span class="vb-l">Lo-fi</span></button>
+          <button class="vb" onclick="pickVibe(this)">🌧<span class="vb-l">Rain</span></button>
+          <button class="vb" onclick="pickVibe(this)">☕<span class="vb-l">Cafe</span></button>
+          <button class="vb" onclick="pickVibe(this)">🔊<span class="vb-l">Noise</span></button>
+          <button class="vb" onclick="window.open('https://open.spotify.com/playlist/0vvXsWCC9xrXsKd4eEFDfe','_blank')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="#1db954"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+            <span class="vb-l">Spotify</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- AI -->
+      <div class="card ai-wrap">
+        <div class="ai-hd">
+          <div class="ai-ic">🎧</div>
+          <div><div class="ai-n">AI Music Producer</div><div class="ai-s">by manal_verse.co</div></div>
+        </div>
+        <div class="ai-msgs" id="ai-msgs">
+          <div class="ai-m a">🎧 <strong>Let's remix your day.</strong><br>Tell me what's on your plate and I'll create your study mix.</div>
+        </div>
+        <div class="ai-r">
+          <input class="ai-i" id="ai-i" placeholder="e.g. Physics exam in 3 days..." onkeydown="if(event.key==='Enter')sendAI()"/>
+          <button class="ai-send" onclick="sendAI()">➤</button>
+        </div>
+      </div>
+
+      <!-- NOTES -->
+      <div class="card">
+        <div class="card-title">📝 Notes</div>
+        <textarea class="notes-ta" placeholder="Don't forget to revise formulas before solving problems...&#10;&#10;Auto-saved · Markdown supported"></textarea>
+      </div>
+
+    </div>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- ADD TRACK MODAL -->
+<div class="mbg" id="add-modal">
+  <div class="modal" style="width:430px">
+    <button class="m-close" onclick="closeM('add-modal')">✕</button>
+    <div class="m-title">🎵 Add New Track</div>
+    <div class="fg"><label class="fl">Track Title *</label><input class="fi" id="f-title" placeholder="e.g. Study Physics Ch.3"></div>
+    <div class="f-row">
+      <div class="fg"><label class="fl">Duration</label><input class="fi" id="f-dur" placeholder="45 mins"></div>
+      <div class="fg"><label class="fl">Priority</label>
+        <select class="fi" id="f-pri"><option value="high">🔴 High</option><option value="medium" selected>🟡 Medium</option><option value="low">🟢 Low</option></select>
+      </div>
+    </div>
+    <div class="f-row">
+      <div class="fg"><label class="fl">Emoji</label><input class="fi" id="f-emoji" placeholder="📚" maxlength="2" style="font-size:20px"></div>
+      <div class="fg"><label class="fl">Tag</label><input class="fi" id="f-tag" placeholder="Study"></div>
+    </div>
+    <div class="fg"><label class="fl">Description</label><input class="fi" id="f-desc" placeholder="Optional notes..."></div>
+    <div class="fg">
+      <label class="fl">Add Pictures</label>
+      <div class="ip-row" id="ip-row">
+        <button class="ip-add" onclick="document.getElementById('modal-img').click()">+</button>
+        <input type="file" id="modal-img" style="display:none" accept="image/*" multiple onchange="previewImgs(this)">
+      </div>
+    </div>
+    <div class="m-acts">
+      <button class="btn-c" onclick="closeM('add-modal')">Cancel</button>
+      <button class="btn-s" onclick="saveTrack()">Add Track ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="mbg" id="settings-modal">
+  <div class="modal stg">
+    <button class="m-close" onclick="closeM('settings-modal')">✕</button>
+    <div class="m-title">⚙️ Settings</div>
+    <div class="stg-sec">
+      <div class="stg-lbl">Appearance</div>
+      <div class="stg-row"><div><div class="stg-rl">Dark Mode</div><div class="stg-rs">Default dark theme</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+      <div class="stg-row">
+        <div><div class="stg-rl">Accent Color</div><div class="stg-rs">Customize your theme</div></div>
+        <div class="color-r">
+          <div class="cdot sel" style="background:#a855f7" onclick="setAccent('#a855f7',this)"></div>
+          <div class="cdot" style="background:#ec4899" onclick="setAccent('#ec4899',this)"></div>
+          <div class="cdot" style="background:#06b6d4" onclick="setAccent('#06b6d4',this)"></div>
+          <div class="cdot" style="background:#10B981" onclick="setAccent('#10B981',this)"></div>
+          <div class="cdot" style="background:#F97316" onclick="setAccent('#F97316',this)"></div>
+          <div class="cdot" style="background:#db2777" onclick="setAccent('#db2777',this)"></div>
+        </div>
+      </div>
+      <div class="stg-row">
+        <div><div class="stg-rl">Font Style</div><div class="stg-rs">Choose your typeface</div></div>
+        <div style="display:flex;gap:6px">
+          <button class="font-btn sel" onclick="setFont('Inter',this)">Inter</button>
+          <button class="font-btn" onclick="setFont(&quot;'Space Grotesk'&quot;,this)">Grotesk</button>
+          <button class="font-btn" onclick="setFont(&quot;'DM Serif Display',serif&quot;,this)">Serif</button>
+        </div>
+      </div>
+    </div>
+    <div class="stg-sec">
+      <div class="stg-lbl">Experience</div>
+      <div class="stg-row"><div><div class="stg-rl">Sound Effects</div><div class="stg-rs">Tape click sounds</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+      <div class="stg-row"><div><div class="stg-rl">Animations</div><div class="stg-rs">Smooth transitions</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+      <div class="stg-row"><div><div class="stg-rl">Cursor Trail</div><div class="stg-rs">Magical sparkle effect</div></div><div class="toggle on" id="trail-toggle" onclick="this.classList.toggle('on');G.trail=!G.trail"></div></div>
+      <div class="stg-row"><div><div class="stg-rl">Timer Notifications</div><div class="stg-rs">Alert when Pomodoro ends</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+    </div>
+    <div class="stg-sec">
+      <div class="stg-lbl">Data</div>
+      <div class="stg-row"><div><div class="stg-rl">Cloud Sync</div><div class="stg-rs">Sync across devices</div></div><div class="toggle" onclick="this.classList.toggle('on');showNotif('Cloud sync coming soon! ☁️')"></div></div>
+      <div class="stg-row"><div><div class="stg-rl">Export Data</div><div class="stg-rs">Download your week tapes</div></div><button class="font-btn" onclick="showNotif('Export coming soon! 📦')">Export</button></div>
+      <div class="stg-row"><div><div class="stg-rl">Reset Week</div><div class="stg-rs">Clear all tracks</div></div><button class="font-btn" onclick="closeM('settings-modal');showNotif('Week reset! Fresh start 📼')">Reset</button></div>
+    </div>
+    <div class="m-acts">
+      <button class="btn-c" onclick="closeM('settings-modal')">Close</button>
+      <button class="btn-s" onclick="closeM('settings-modal');showNotif('Settings saved! ✨')">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- TAPE COMPLETE -->
+<div class="co" id="co">
+  <div style="position:absolute;inset:0" onclick="closeCo()"></div>
+  <div class="co-card">
+    <div id="conf-wrap" style="position:absolute;inset:0;overflow:hidden;border-radius:30px;pointer-events:none"></div>
+    <div class="co-tape" id="co-tape">
+      <div class="co-tape-bg" id="co-tape-bg"></div>
+      <div class="co-tape-sh"></div>
+      <div style="position:relative;z-index:1;text-align:center">
+        <div style="font-size:28px;margin-bottom:4px">⭐</div>
+        <div style="font-family:'Space Mono',monospace;font-size:11px;font-weight:700;color:#fff;letter-spacing:2px" id="co-dname">MONDAY</div>
+      </div>
+    </div>
+    <div class="co-title" id="co-title">Monday Complete!</div>
+    <div class="co-sub">Great work. See you tomorrow. 💜</div>
+    <button class="co-btn" onclick="closeCo()">⏏ Eject Tape</button>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lb" id="lb" onclick="this.classList.remove('open')">
+  <img id="lb-img" src="" alt="">
+</div>
+
+<!-- NOTIF -->
+<div class="notif" id="notif"><span id="notif-txt">Track added! 🎵</span></div>
+
+<script>
+// ═══════════════════ DATA ═══════════════════
+const DAYS = [
+  {name:'Monday',   short:'MON',num:'001',color:'#a855f7',pastel:'#e9d5ff',theme:'Lavender skies · clouds · stars · moon · tiny flowers'},
+  {name:'Tuesday',  short:'TUE',num:'002',color:'#db2777',pastel:'#fbcfe8',theme:'Cherry blossoms · pink clouds · hearts'},
+  {name:'Wednesday',short:'WED',num:'003',color:'#d97706',pastel:'#fef08a',theme:'Sunflowers · sunny sky · butterflies'},
+  {name:'Thursday', short:'THU',num:'004',color:'#059669',pastel:'#bbf7d0',theme:'Forest · mushrooms · leaves'},
+  {name:'Friday',   short:'FRI',num:'005',color:'#ea580c',pastel:'#fed7aa',theme:'Sunset · orange flowers · golden hour'},
+  {name:'Saturday', short:'SAT',num:'006',color:'#2563eb',pastel:'#bfdbfe',theme:'Ocean · whales · clouds'},
+  {name:'Sunday',   short:'SUN',num:'007',color:'#dc2626',pastel:'#fecaca',theme:'Picnic · strawberries · mountains'},
+];
+
+const TAPE_DECOS = [
+  ['🌙','☁️','✦','🌸'],['🌸','💖','☁️','🌺'],['🌻','🦋','☀️','🌼'],
+  ['🍄','🌿','🍃','🌲'],['🌅','🌸','✨','🍊'],['🌊','🐋','☁️','💙'],['🍓','🏔️','🌈','🍀'],
+];
+const THOUGHTS = [
+  '"Small progress every day leads to big results."',
+  '"Your only limit is your mind."',
+  '"Make today so awesome, yesterday gets jealous."',
+  '"One track at a time. One day at a time."',
+  '"Play the day like it\'s your favorite song."',
+  '"Every great week starts with a single track."',
+  '"The cassette doesn\'t stop until the tape ends."',
+];
+const AI_RESP = [
+  m=>`🎧 I've noticed **${m}**.\n\nHere's your study mix:\n🎵 Track 1: Research & Overview (30 min)\n🎵 Track 2: Deep Focus Session (1h)\n🎵 Track 3: Review & Notes (20 min)\n\nAdd all tracks to today's tape?`,
+  m=>`🎧 Let's remix your day for **${m}**:\n\n🔴 Priority block: Core work (45m)\n🟡 Medium: Practice & review (30m)\n🟢 Light: Wrap-up (15m)\n\nLooks like a great mixtape! 📼`,
+  m=>`🎧 I've created a study mix for **${m}**:\n\n🎵 Morning: Focus blocks (1h each)\n🎵 Afternoon: Review sessions\n🎵 Evening: Light prep\n\nYour day is officially remixed! ✨`,
+];
+
+let G = {
+  day: new Date().getDay()===0?6:new Date().getDay()-1,
+  playing:false, musicOn:false,
+  timerOn:false, timerSecs:25*60, timerMode:25, timerInterval:null,
+  trail:true, addCol:0, nextId:20, modalImgs:[], atts:[],
+  tracks:{
+    0:[
+      {id:1,title:'Chemistry Ch.3',desc:'Read & Notes',emoji:'📚',dur:'45m',priority:'high',tag:'Study',imgs:[]},
+      {id:2,title:'Edit Reel',desc:'For manal_verse',emoji:'🎬',dur:'30m',priority:'medium',tag:'Work',imgs:[]},
+      {id:3,title:'Call Supplier',desc:'Packaging',emoji:'📞',dur:'15m',priority:'low',tag:'',imgs:[]},
+      {id:4,title:'Workout',desc:'30 mins',emoji:'💪',dur:'30m',priority:'medium',tag:'Health',imgs:[]},
+      {id:5,title:'Read 20 pages',desc:'Atomic Habits',emoji:'📖',dur:'40m',priority:'low',tag:'',imgs:[]},
+    ],
+    1:[
+      {id:6,title:'Study Physics',desc:'Laws of Motion',emoji:'⚡',dur:'1h',priority:'high',tag:'Study',imgs:[]},
+      {id:7,title:'Design Logo',desc:'Khadim Host',emoji:'🎨',dur:'45m',priority:'medium',tag:'Design',imgs:[]},
+    ],
+    2:[
+      {id:8,title:'Math Homework',desc:'Coordinate Geo.',emoji:'📐',dur:'1h',priority:'high',tag:'Study',imgs:[],done:true},
+      {id:9,title:'Morning Journal',emoji:'📓',dur:'15m',priority:'low',tag:'',imgs:[],done:true},
+      {id:10,title:'Drink 2L Water',emoji:'💧',dur:'—',priority:'low',tag:'',imgs:[],done:true},
+      {id:11,title:'Meditation',desc:'10 mins',emoji:'🧘',dur:'10m',priority:'low',tag:'',imgs:[],done:true},
+    ],
+  },
+  prog:[29,12,0,0,0,0,0],
+};
+
+// ═══════════════════ CURSOR ═══════════════════
+const dot=document.getElementById('c-dot'), ring=document.getElementById('c-ring');
+let mx=0,my=0,rx=0,ry=0,trailIdx=0;
+const TC=['#a855f7','#ec4899','#fde68a','#6ee7b7','#93c5fd','#fdba74','#fca5a5','#fff'];
+
+document.addEventListener('mousemove',e=>{
+  mx=e.clientX; my=e.clientY;
+  dot.style.left=mx+'px'; dot.style.top=my+'px';
+  if(G.trail) spawnTrail(mx,my);
+});
+function spawnTrail(x,y){
+  const t=document.createElement('div');
+  const sz=3+Math.random()*5;
+  t.className='trail';
+  t.style.cssText=`left:${x}px;top:${y}px;width:${sz}px;height:${sz}px;background:${TC[trailIdx%TC.length]}`;
+  trailIdx++;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(),700);
+}
+(function animRing(){
+  rx+=(mx-rx)*0.1; ry+=(my-ry)*0.1;
+  ring.style.left=rx+'px'; ring.style.top=ry+'px';
+  requestAnimationFrame(animRing);
+})();
+document.addEventListener('mousedown',e=>{
+  dot.style.width='6px'; dot.style.height='6px';
+  ring.style.width='50px'; ring.style.height='50px';
+  spawnBurst(e.clientX, e.clientY);
+});
+document.addEventListener('mouseup',()=>{
+  dot.style.width='9px'; dot.style.height='9px';
+  ring.style.width='34px'; ring.style.height='34px';
+});
+
+function spawnBurst(x,y){
+  const burst=document.createElement('div');
+  burst.className='spark-burst';
+  burst.style.cssText=`left:${x}px;top:${y}px`;
+  for(let i=0;i<8;i++){
+    const p=document.createElement('div');
+    const angle=i*(360/8)*Math.PI/180;
+    const dist=20+Math.random()*30;
+    p.className='sb-p';
+    p.style.cssText=`width:${4+Math.random()*4}px;height:${4+Math.random()*4}px;background:${TC[i%TC.length]};--dx:${Math.cos(angle)*dist}px;--dy:${Math.sin(angle)*dist}px`;
+    burst.appendChild(p);
+  }
+  document.body.appendChild(burst);
+  setTimeout(()=>burst.remove(),700);
+}
+
+// ═══════════════════ LANDING ═══════════════════
+function buildLandingShelf(){
+  const shelf=document.getElementById('lg-shelf');
+  shelf.innerHTML=DAYS.map((d,i)=>`
+    <div class="lt" style="background:linear-gradient(160deg,${d.pastel},${d.color});animation-delay:${i*0.07+0.9}s" onclick="enterApp()" title="${d.theme}">
+      <div class="lt-window">
+        <div class="lt-reel"></div>
+        <div class="lt-reel"></div>
+      </div>
+      <div class="lt-label">${d.short}</div>
+      <div class="lt-sparkle">✨</div>
+      <div class="lt-deco" style="top:5px;left:6px;font-size:10px">${TAPE_DECOS[i][0]}</div>
+      <div class="lt-deco" style="top:5px;right:6px;font-size:9px">${TAPE_DECOS[i][1]}</div>
+      <div class="lt-deco" style="bottom:5px;left:5px;font-size:9px">${TAPE_DECOS[i][2]}</div>
+    </div>
+  `).join('');
+}
+buildLandingShelf();
+
+function enterApp(){
+  const landing=document.getElementById('landing');
+  landing.classList.add('out');
+  setTimeout(()=>{
+    landing.style.display='none';
+    document.getElementById('app').style.display='block';
+    buildSidebar();
+    buildWeekShelf();
+    selectDay(G.day);
+  },850);
+}
+
+// ═══════════════════ SIDEBAR ═══════════════════
+function buildSidebar(){
+  const el=document.getElementById('sb-list');
+  el.innerHTML=DAYS.map((d,i)=>`
+    <div class="nt ${i===G.day?'on':''}" id="nt-${i}" style="--dc:${d.color}" onclick="selectDay(${i})">
+      <div class="nt-tape" style="background:linear-gradient(160deg,${d.pastel},${d.color})">
+        <div class="nt-win"><div class="nt-r"></div><div class="nt-r"></div></div>
+        <div style="position:absolute;bottom:2px;left:0;right:0;text-align:center;font-size:6px;font-weight:700;color:rgba(255,255,255,0.8);letter-spacing:0.5px;font-family:'Space Mono',monospace">${d.short}</div>
+      </div>
+      <div class="nt-info">
+        <div class="nt-day" style="color:${d.color}">${d.name}</div>
+        <div class="nt-pct" id="nt-p-${i}">${G.prog[i]}% done</div>
+      </div>
+      <svg class="nt-ring" viewBox="0 0 28 28">
+        <circle cx="14" cy="14" r="11" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="2.5"/>
+        <circle cx="14" cy="14" r="11" fill="none" stroke="${d.color}" stroke-width="2.5"
+          stroke-dasharray="${2*Math.PI*11}" stroke-dashoffset="${2*Math.PI*11*(1-G.prog[i]/100)}"
+          stroke-linecap="round" transform="rotate(-90 14 14)" id="nr-${i}"/>
+      </svg>
+    </div>
+  `).join('');
+}
+
+function updateSidebar(){
+  DAYS.forEach((_,i)=>{
+    const nt=document.getElementById(`nt-${i}`);
+    if(nt) nt.classList.toggle('on',i===G.day);
+    const pp=document.getElementById(`nt-p-${i}`);
+    if(pp) pp.textContent=G.prog[i]+'% done';
+    const nr=document.getElementById(`nr-${i}`);
+    if(nr) nr.setAttribute('stroke-dashoffset',2*Math.PI*11*(1-G.prog[i]/100));
+  });
+}
+
+// ═══════════════════ WEEK SHELF ═══════════════════
+function buildWeekShelf(){
+  const el=document.getElementById('week-shelf');
+  el.innerHTML=DAYS.map((d,i)=>`
+    <div class="wt" onclick="selectDay(${i})" style="--sc:${d.color};background:linear-gradient(160deg,${d.pastel},${d.color})">
+      <div style="position:absolute;top:3px;left:3px;font-size:8px;opacity:0.8">${TAPE_DECOS[i][0]}</div>
+      ${G.prog[i]===100?`<div class="wt-star">⭐</div>`:''}
+      <div class="wt-day">${d.name.toUpperCase()}</div>
+      <div class="wt-prog"><div class="wt-fill" style="width:${G.prog[i]}%"></div></div>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════ SELECT DAY ═══════════════════
+function selectDay(i){
+  G.day=i;
+  const d=DAYS[i];
+
+  document.getElementById('tb-badge').textContent=d.num;
+  const td=document.getElementById('tb-day');
+  td.textContent=d.name.toUpperCase(); td.style.color=d.color;
+  document.getElementById('tb-date').textContent=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+
+  const bg=document.getElementById('ch-tape-bg');
+  bg.style.background=`linear-gradient(160deg,${d.pastel},${d.color})`;
+  document.getElementById('ch-num').textContent=d.num;
+  document.getElementById('ch-dname').textContent=d.name.toUpperCase();
+  document.getElementById('ch-name').textContent=d.name;
+  document.getElementById('ch-date').textContent=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+
+  const pb=document.getElementById('play-btn');
+  pb.style.background=`linear-gradient(135deg,${d.color},${d.color}cc)`;
+  document.getElementById('prog-fill').style.background=d.color;
+  document.getElementById('si-focus').style.color=d.color;
+
+  // Update Walkman bg
+  const wt=document.querySelector('.wk-body');
+  wt.style.borderColor=`${d.color}33`;
+
+  document.getElementById('thought-txt').textContent=THOUGHTS[i];
+
+  // Tape entrance animation
+  const tape=document.getElementById('ch-tape');
+  tape.style.animation='none'; void tape.offsetWidth;
+  tape.style.animation='tapeHeroIn 0.7s cubic-bezier(0.34,1.56,0.64,1) both';
+
+  updateProgress();
+  renderKanban();
+  updateSidebar();
+  buildWeekShelf();
+}
+
+function navDay(dir){ let n=G.day+dir; if(n<0)n=0; if(n>6)n=6; selectDay(n); }
+
+// ═══════════════════ PROGRESS ═══════════════════
+function calcProg(){
+  const t=(G.tracks[0]?.length||0)+(G.tracks[1]?.length||0)+(G.tracks[2]?.length||0);
+  const d=G.tracks[2]?.length||0;
+  return t===0?0:Math.round((d/t)*100);
+}
+function updateProgress(){
+  const p=calcProg(); G.prog[G.day]=p;
+  document.getElementById('prog-pct').textContent=p+'%';
+  document.getElementById('prog-fill').style.width=p+'%';
+  document.getElementById('wk-slot').style.width=p+'%';
+  const left=(G.tracks[0]?.length||0)+(G.tracks[1]?.length||0);
+  const done=G.tracks[2]?.length||0;
+  document.getElementById('si-left').textContent=left;
+  document.getElementById('stat-done').textContent=done;
+  document.getElementById('stat-rate').textContent=p+'%';
+  document.getElementById('total-cnt').textContent=left+done;
+  updateSidebar(); buildWeekShelf();
+}
+
+// ═══════════════════ KANBAN ═══════════════════
+const COLS=[
+  {title:'🎵 To Play',k:0,col:'#6B7280'},
+  {title:'▶ Playing', k:1,col:null},
+  {title:'✔ Finished',k:2,col:'#10B981'},
+];
+function renderKanban(){
+  const d=DAYS[G.day];
+  const board=document.getElementById('kanban');
+  board.innerHTML=COLS.map(col=>`
+    <div class="kc" id="kc-${col.k}"
+      ondragover="event.preventDefault();this.classList.add('over')"
+      ondragleave="this.classList.remove('over')"
+      ondrop="dropTk(event,${col.k})">
+      <div class="kch">
+        <div class="kct" style="color:${col.col||d.color}">${col.title}</div>
+        <div class="kcc">${G.tracks[col.k]?.length||0}</div>
+      </div>
+      ${(G.tracks[col.k]||[]).map(t=>`
+        <div class="tk" draggable="true" ondragstart="startDrag(event,${t.id})">
+          <div class="tk-h">
+            <div class="tk-e">${t.emoji||'🎵'}</div>
+            <div class="tk-t">${t.title}</div>
+            <div class="tk-check ${col.k===2?'done':''}" onclick="checkTrack(${t.id},${col.k})">${col.k===2?'✓':''}</div>
+          </div>
+          <div class="tk-m">
+            ${t.desc?`<span class="tk-tag">${t.desc}</span>`:''}
+            ${t.tag?`<span class="tk-tag" style="color:${d.color}">#${t.tag}</span>`:''}
+            <span class="tk-dur">⏱ ${t.dur||'—'}</span>
+          </div>
+          ${t.imgs&&t.imgs.length?`<div class="tk-imgs">${t.imgs.map(s=>`<img class="tk-img" src="${s}" onclick="openLb('${s}')">`).join('')}</div>`:''}
+        </div>
+      `).join('')}
+      ${(G.tracks[col.k]?.length||0)===0?`<div style="text-align:center;padding:24px 0;color:var(--muted);font-size:11px;font-family:'Space Mono',monospace">📼 Ready to record?</div>`:''}
+      <button class="add-tk-btn" onclick="openAdd(${col.k})">+ Add Track</button>
+    </div>
+  `).join('');
+}
+
+function checkTrack(id, fromCol){
+  // Move to finished with sparkle animation
+  let track;
+  for(let c in G.tracks){
+    const idx=G.tracks[c].findIndex(t=>t.id===id);
+    if(idx>-1){[track]=G.tracks[c].splice(idx,1);break;}
+  }
+  if(track){
+    G.tracks[2]=G.tracks[2]||[];
+    if(fromCol!==2) G.tracks[2].push(track);
+    else { G.tracks[0].push(track); } // un-complete
+  }
+  renderKanban(); updateProgress();
+  showNotif('Track completed! ✨ Great work!');
+}
+
+let dragId=null;
+function startDrag(e,id){ dragId=id; setTimeout(()=>e.target.classList.add('dragging'),0); }
+function dropTk(e,toCol){
+  e.preventDefault();
+  document.querySelectorAll('.kc').forEach(c=>c.classList.remove('over'));
+  if(dragId===null) return;
+  let track;
+  for(let c in G.tracks){
+    const idx=G.tracks[c].findIndex(t=>t.id===dragId);
+    if(idx>-1){[track]=G.tracks[c].splice(idx,1);break;}
+  }
+  if(track){G.tracks[toCol]=G.tracks[toCol]||[];G.tracks[toCol].push(track);}
+  dragId=null;
+  renderKanban(); updateProgress();
+  showNotif('Track moved! 📼');
+}
+
+// ═══════════════════ ADD TRACK ═══════════════════
+function openAdd(col){
+  G.addCol=col; G.modalImgs=[];
+  ['f-title','f-dur','f-emoji','f-tag','f-desc'].forEach(id=>document.getElementById(id).value='');
+  renderIpRow();
+  document.getElementById('add-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('f-title').focus(),200);
+}
+function renderIpRow(){
+  const row=document.getElementById('ip-row');
+  row.innerHTML=G.modalImgs.map((src,i)=>`
+    <div style="position:relative;display:inline-block">
+      <img class="ip-thumb" src="${src}">
+      <div class="ip-rm" onclick="G.modalImgs.splice(${i},1);renderIpRow()">✕</div>
+    </div>
+  `).join('')+`
+    <button class="ip-add" onclick="document.getElementById('modal-img').click()">+</button>
+    <input type="file" id="modal-img" style="display:none" accept="image/*" multiple onchange="previewImgs(this)">
+  `;
+}
+function previewImgs(inp){
+  Array.from(inp.files).forEach(f=>{
+    const r=new FileReader();
+    r.onload=e=>{G.modalImgs.push(e.target.result);renderIpRow();};
+    r.readAsDataURL(f);
+  });
+}
+function saveTrack(){
+  const title=document.getElementById('f-title').value.trim();
+  if(!title){document.getElementById('f-title').style.borderColor='#ef4444';document.getElementById('f-title').focus();return;}
+  G.tracks[G.addCol].push({
+    id:G.nextId++,
+    title,
+    emoji:document.getElementById('f-emoji').value.trim()||'🎵',
+    dur:document.getElementById('f-dur').value.trim()||'—',
+    priority:document.getElementById('f-pri').value,
+    tag:document.getElementById('f-tag').value.trim(),
+    desc:document.getElementById('f-desc').value.trim(),
+    imgs:[...G.modalImgs],
+  });
+  closeM('add-modal');
+  renderKanban(); updateProgress();
+  showNotif('Track added! 🎵');
+}
+
+// ═══════════════════ ATTACHMENTS ═══════════════════
+function addAtts(inp){
+  Array.from(inp.files).forEach(f=>{
+    const r=new FileReader();
+    r.onload=e=>{G.atts.push(e.target.result);renderAtts();};
+    r.readAsDataURL(f);
+  });
+}
+function renderAtts(){
+  const g=document.getElementById('att-grid');
+  g.innerHTML=G.atts.map(src=>`<img class="att-i" src="${src}" onclick="openLb('${src}')">`).join('')+`
+    <button class="att-add-btn" onclick="document.getElementById('att-file').click()">+</button>
+    <input type="file" id="att-file" style="display:none" accept="image/*" multiple onchange="addAtts(this)">
+  `;
+}
+
+// ═══════════════════ LIGHTBOX ═══════════════════
+function openLb(src){ document.getElementById('lb-img').src=src; document.getElementById('lb').classList.add('open'); }
+
+// ═══════════════════ PLAY ═══════════════════
+function togglePlay(){
+  G.playing=!G.playing;
+  document.getElementById('play-icon').textContent=G.playing?'⏸':'▶';
+  document.getElementById('play-txt').textContent=G.playing?'PAUSE DAY':'PLAY DAY';
+  document.getElementById('tb-play-btn').textContent=G.playing?'⏸ Pause Day':'▶ Play Day';
+  document.getElementById('rl').classList.toggle('spin',G.playing);
+  document.getElementById('rr').classList.toggle('spin',G.playing);
+  document.getElementById('eq-icon').style.display=G.playing?'inline-flex':'none';
+  showNotif(G.playing?'Day started! Let\'s go 🔥':'Day paused ⏸');
+}
+
+// ═══════════════════ MUSIC ═══════════════════
+function toggleMusic(){
+  G.musicOn=!G.musicOn;
+  document.getElementById('mc-p').textContent=G.musicOn?'⏸':'▶';
+  document.getElementById('eq-mini').style.display=G.musicOn?'inline-flex':'none';
+  showNotif(G.musicOn?'Now playing lo-fi beats 🎵':'Music paused ⏸');
+}
+
+// ═══════════════════ WALKMAN TIMER ═══════════════════
+function setMode(btn,mins,label){
+  document.querySelectorAll('.mode-t').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  G.timerMode=mins;
+  document.querySelector('.wk-track-lbl').textContent=`◀◀ TASKTAPE FOCUS TIMER · ${label} · ${mins}:00 ▶▶`;
+  resetTimer();
+}
+function toggleTimer(){
+  if(G.timerOn){
+    clearInterval(G.timerInterval); G.timerOn=false;
+    document.getElementById('wk-play-btn').textContent='▶';
+    document.getElementById('wkrl').classList.remove('spin');
+    document.getElementById('wkrr').classList.remove('spin');
+  } else {
+    G.timerOn=true;
+    document.getElementById('wk-play-btn').textContent='⏸';
+    document.getElementById('wkrl').classList.add('spin');
+    document.getElementById('wkrr').classList.add('spin');
+    G.timerInterval=setInterval(()=>{
+      G.timerSecs--;
+      if(G.timerSecs<=0){
+        clearInterval(G.timerInterval); G.timerOn=false; G.timerSecs=0;
+        document.getElementById('wk-play-btn').textContent='▶';
+        document.getElementById('wkrl').classList.remove('spin');
+        document.getElementById('wkrr').classList.remove('spin');
+        showNotif('🎉 Pomodoro complete! Take a break.');
+      }
+      renderTimer();
+    },1000);
+  }
+}
+function resetTimer(){
+  clearInterval(G.timerInterval); G.timerOn=false;
+  G.timerSecs=G.timerMode*60;
+  document.getElementById('wk-play-btn').textContent='▶';
+  document.getElementById('wkrl').classList.remove('spin');
+  document.getElementById('wkrr').classList.remove('spin');
+  renderTimer();
+}
+function renderTimer(){
+  const m=Math.floor(G.timerSecs/60).toString().padStart(2,'0');
+  const s=(G.timerSecs%60).toString().padStart(2,'0');
+  document.getElementById('wk-time').textContent=`${m}:${s}`;
+  // Update slot fill based on time elapsed
+  const total=G.timerMode*60;
+  const elapsed=total-G.timerSecs;
+  document.getElementById('wk-slot').style.width=`${(elapsed/total)*100}%`;
+}
+
+// ═══════════════════ MOOD ═══════════════════
+function pickMood(el,mood){
+  document.querySelectorAll('.mb').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on'); showNotif(`Vibe set: ${mood} 💫`);
+}
+
+// ═══════════════════ VIBE ═══════════════════
+function pickVibe(el){
+  document.querySelectorAll('.vb').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+}
+
+// ═══════════════════ AI ═══════════════════
+function sendAI(){
+  const inp=document.getElementById('ai-i'), msg=inp.value.trim();
+  if(!msg) return;
+  const box=document.getElementById('ai-msgs');
+  const u=document.createElement('div'); u.className='ai-m u'; u.textContent=msg;
+  box.appendChild(u); inp.value='';
+  const thinking=document.createElement('div'); thinking.className='ai-m a';
+  thinking.innerHTML='<em style="opacity:0.5">🎧 Remixing your day...</em>';
+  box.appendChild(thinking); box.scrollTop=box.scrollHeight;
+  setTimeout(()=>{
+    const resp=AI_RESP[Math.floor(Math.random()*AI_RESP.length)](msg);
+    thinking.innerHTML=resp.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+    box.scrollTop=box.scrollHeight;
+  },1300);
+}
+
+// ═══════════════════ SETTINGS ═══════════════════
+function openSettings(){ document.getElementById('settings-modal').classList.add('open'); }
+function setAccent(c,el){
+  document.querySelectorAll('.cdot').forEach(d=>d.classList.remove('sel'));
+  el.classList.add('sel');
+  document.documentElement.style.setProperty('--accent',c);
+  showNotif('Accent color updated! 🎨');
+}
+function setFont(f,el){
+  document.querySelectorAll('.font-btn').forEach(b=>b.classList.remove('sel'));
+  el.classList.add('sel');
+  document.body.style.fontFamily=f;
+  showNotif('Font updated! ✨');
+}
+
+// ═══════════════════ MODALS ═══════════════════
+function closeM(id){ document.getElementById(id).classList.remove('open'); }
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    document.querySelectorAll('.mbg.open').forEach(m=>m.classList.remove('open'));
+    document.getElementById('lb').classList.remove('open');
+  }
+});
+
+// ═══════════════════ COMPLETE ═══════════════════
+function showComplete(){
+  const d=DAYS[G.day];
+  document.getElementById('co-tape-bg').style.background=`linear-gradient(160deg,${d.pastel},${d.color})`;
+  document.getElementById('co-dname').textContent=d.name.toUpperCase();
+  document.getElementById('co-title').textContent=`${d.name} Complete!`;
+  const cw=document.getElementById('conf-wrap'); cw.innerHTML='';
+  const cc=['#a855f7','#ec4899','#fde68a','#6ee7b7','#93c5fd','#fdba74','#fca5a5','#fff'];
+  for(let i=0;i<18;i++){
+    const c=document.createElement('div'); c.className='confetti-b';
+    c.style.cssText=`width:${5+Math.random()*6}px;height:${5+Math.random()*6}px;background:${cc[i%cc.length]};left:${Math.random()*100}%;border-radius:${Math.random()>0.5?'50%':'2px'};animation-duration:${1.4+Math.random()*0.8}s;animation-delay:${Math.random()*1.2}s`;
+    cw.appendChild(c);
+  }
+  document.getElementById('co').classList.add('open');
+}
+function closeCo(){ document.getElementById('co').classList.remove('open'); }
+
+// ═══════════════════ NOTIF ═══════════════════
+let _nt=null;
+function showNotif(msg){
+  clearTimeout(_nt);
+  const n=document.getElementById('notif');
+  document.getElementById('notif-txt').textContent=msg;
+  n.classList.add('show');
+  _nt=setTimeout(()=>n.classList.remove('show'),2800);
+}
+
+// ═══════════════════ INIT ═══════════════════
+renderTimer();
+
+// Hover sparkles on cassette
+document.getElementById('ch-tape').addEventListener('mouseenter',()=>document.getElementById('ch-sparkles').style.opacity='1');
+document.getElementById('ch-tape').addEventListener('mouseleave',()=>document.getElementById('ch-sparkles').style.opacity='0');
+</script>
+</body>
+</html>
