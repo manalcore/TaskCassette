@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TaskTape — Your Week. Your Mixtape.</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+:root{
+  --bg:#0D1117;--s1:#161B22;--s2:#1C2330;
+  --border:rgba(255,255,255,0.07);--text:#E6EDF3;--muted:#8B949E;
+  --accent:#a855f7;
+  --col-mon:#a855f7;--col-tue:#db2777;--col-wed:#d97706;
+  --col-thu:#059669;--col-fri:#ea580c;--col-sat:#2563eb;--col-sun:#dc2626;
+  --p-mon:#e9d5ff;--p-tue:#fbcfe8;--p-wed:#fef08a;
+  --p-thu:#bbf7d0;--p-fri:#fed7aa;--p-sat:#bfdbfe;--p-sun:#fecaca;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);cursor:none}
+
+/* ═══ CURSOR ═══ */
+#cdot{position:fixed;width:8px;height:8px;background:#a855f7;border-radius:50%;pointer-events:none;z-index:99999;transform:translate(-50%,-50%);transition:width .15s,height .15s,background .2s;mix-blend-mode:screen}
+#cring{position:fixed;width:32px;height:32px;border:1.5px solid rgba(168,85,247,.5);border-radius:50%;pointer-events:none;z-index:99998;transform:translate(-50%,-50%);transition:width .3s,height .3s;mix-blend-mode:screen}
+.ctrail{position:fixed;border-radius:50%;pointer-events:none;z-index:99990;transform:translate(-50%,-50%);animation:ctrailFade .65s ease forwards}
+@keyframes ctrailFade{0%{opacity:.85;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(0)}}
+.cburst{position:fixed;pointer-events:none;z-index:9999}
+.cburst-p{position:absolute;border-radius:50%;animation:cburstPop .55s ease-out forwards}
+@keyframes cburstPop{0%{transform:translate(-50%,-50%) scale(1);opacity:1}100%{transform:translate(calc(-50% + var(--tx)),calc(-50% + var(--ty))) scale(0);opacity:0}}
+
+/* ═══ LOADING SCREEN ═══ */
+#loader{position:fixed;inset:0;z-index:1000;background:#0D1117;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .8s ease}
+#loader.gone{opacity:0;pointer-events:none}
+.loader-logo{font-family:'DM Serif Display',serif;font-size:42px;background:linear-gradient(135deg,#a855f7,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px;animation:loaderPulse 1.5s ease-in-out infinite}
+@keyframes loaderPulse{0%,100%{opacity:.7}50%{opacity:1}}
+.loader-sub{font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:2px;margin-bottom:40px}
+.loader-tape{width:80px;height:54px;border-radius:10px;background:linear-gradient(160deg,#e9d5ff,#a855f7);position:relative;margin:0 auto 30px;animation:loaderFloat 2s ease-in-out infinite;box-shadow:0 8px 30px rgba(168,85,247,.4)}
+@keyframes loaderFloat{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-10px) rotate(2deg)}}
+.loader-tape::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:46px;height:14px;background:rgba(0,0,0,.3);border-radius:3px}
+.loader-reel{position:absolute;width:13px;height:13px;border-radius:50%;background:rgba(0,0,0,.5);border:2px solid rgba(255,255,255,.2);top:50%;transform:translateY(-50%)}
+.loader-reel.l{left:12px;animation:spin 1.2s linear infinite}
+.loader-reel.r{right:12px;animation:spin 1.2s linear infinite reverse}
+@keyframes spin{to{transform:translateY(-50%) rotate(360deg)}}
+.loader-dots{display:flex;gap:6px}
+.loader-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:loaderDot 1.2s ease-in-out infinite}
+.loader-dot:nth-child(2){animation-delay:.2s}
+.loader-dot:nth-child(3){animation-delay:.4s}
+@keyframes loaderDot{0%,100%{transform:scale(.5);opacity:.3}50%{transform:scale(1);opacity:1}}
+
+/* ═══ LANDING ═══ */
+#landing{position:fixed;inset:0;z-index:500;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(160deg,#fdf4ff 0%,#fce7f3 20%,#ede9fe 40%,#dbeafe 60%,#d1fae5 80%,#fef9c3 100%);transition:opacity .9s cubic-bezier(.4,0,.2,1),transform .9s cubic-bezier(.4,0,.2,1)}
+#landing.out{opacity:0;pointer-events:none;transform:scale(1.06) translateY(-16px)}
+.blob{position:absolute;border-radius:50%;filter:blur(72px);pointer-events:none;opacity:.45}
+.b1{width:480px;height:480px;background:radial-gradient(#c4b5fd,#f9a8d4);top:-140px;left:-140px;animation:blobFloat 9s ease-in-out infinite}
+.b2{width:400px;height:400px;background:radial-gradient(#6ee7b7,#93c5fd);bottom:-100px;right:-100px;animation:blobFloat 11s ease-in-out infinite reverse}
+.b3{width:290px;height:290px;background:radial-gradient(#fde68a,#fdba74);top:40%;left:-70px;animation:blobFloat 13s ease-in-out infinite 2s}
+.b4{width:330px;height:330px;background:radial-gradient(#f9a8d4,#fca5a5);bottom:-50px;left:35%;animation:blobFloat 10s ease-in-out infinite 4s}
+.b5{width:240px;height:240px;background:radial-gradient(#c4b5fd,#93c5fd);top:5%;right:10%;animation:blobFloat 8s ease-in-out infinite 1s}
+@keyframes blobFloat{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(22px,-22px) scale(1.05)}66%{transform:translate(-16px,16px) scale(.97)}}
+.fp{position:absolute;pointer-events:none;animation:fpRise linear infinite;opacity:0}
+@keyframes fpRise{0%{transform:translateY(105vh) rotate(0);opacity:0}6%{opacity:.7}90%{opacity:.7}100%{transform:translateY(-10vh) rotate(360deg);opacity:0}}
+.gl{position:absolute;border-radius:50%;pointer-events:none;animation:glTwinkle ease-in-out infinite}
+@keyframes glTwinkle{0%,100%{opacity:0;transform:scale(.3)}50%{opacity:1;transform:scale(1)}}
+.mn{position:absolute;pointer-events:none;animation:mnBob ease-in-out infinite;opacity:.25}
+@keyframes mnBob{0%,100%{transform:translateY(0) rotate(-8deg)}50%{transform:translateY(-14px) rotate(8deg)}}
+/* EQ bars on landing */
+.land-eq{display:flex;align-items:flex-end;gap:3px;height:28px;margin-bottom:18px}
+.land-eq-bar{width:4px;border-radius:2px;background:linear-gradient(180deg,#a855f7,#ec4899);animation:eqAnim ease-in-out infinite}
+@keyframes eqAnim{0%,100%{height:4px}50%{height:var(--h)}}
+
+.lglass{position:relative;z-index:10;background:rgba(255,255,255,.52);backdrop-filter:blur(28px) saturate(1.4);-webkit-backdrop-filter:blur(28px) saturate(1.4);border:1.5px solid rgba(255,255,255,.75);border-radius:36px;padding:46px 64px 44px;text-align:center;box-shadow:0 12px 60px rgba(168,85,247,.14),0 2px 0 rgba(255,255,255,.85) inset;max-width:720px;width:92%;animation:glassIn 1s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes glassIn{from{opacity:0;transform:translateY(50px) scale(.9)}to{opacity:1;transform:none}}
+.lg-logo-row{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:5px;animation:fadeUp .7s .2s both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+.lg-logo-name{font-family:'DM Serif Display',serif;font-size:34px;background:linear-gradient(135deg,#7c3aed,#db2777);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.lg-byline{font-family:'Space Mono',monospace;font-size:9px;color:#7c3aed;letter-spacing:2px;text-transform:uppercase;margin-bottom:32px;opacity:.6;animation:fadeUp .7s .3s both}
+.lg-h1{font-family:'DM Serif Display',serif;line-height:1.05;margin-bottom:12px}
+.lh1-a{font-size:clamp(42px,6vw,78px);background:linear-gradient(135deg,#6d28d9,#be185d);-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:block;animation:fadeUp .7s .4s both}
+.lh1-b{font-size:clamp(42px,6vw,78px);background:linear-gradient(135deg,#be185d,#b45309);-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:block;animation:fadeUp .7s .55s both}
+.lg-sub{font-size:15px;color:#6b21a8;opacity:.75;margin-bottom:34px;animation:fadeUp .7s .7s both}
+
+/* LANDING CASSETTES — rich illustrated */
+.lg-shelf{display:flex;gap:11px;justify-content:center;margin-bottom:38px;perspective:1200px;animation:fadeUp .7s .85s both}
+.ltape{width:88px;height:60px;border-radius:12px;position:relative;cursor:none;overflow:hidden;transition:transform .4s cubic-bezier(.34,1.56,.64,1),box-shadow .3s;animation:ltapeIn .6s cubic-bezier(.34,1.56,.64,1) both;box-shadow:0 5px 18px rgba(0,0,0,.2),0 1px 0 rgba(255,255,255,.5) inset}
+.ltape:hover{transform:translateY(-20px) rotateX(12deg) scale(1.1)!important;z-index:10}
+@keyframes ltapeIn{from{opacity:0;transform:translateY(38px) scale(.8)}to{opacity:1;transform:none}}
+/* Glossy plastic overlay */
+.ltape-gloss{position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.28) 0%,rgba(255,255,255,.06) 45%,transparent 60%);border-radius:12px;pointer-events:none;z-index:4}
+/* Paper label */
+.ltape-label{position:absolute;top:8px;left:8px;right:8px;bottom:18px;border-radius:5px;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}
+.ltape-label::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='3' height='3'%3E%3Crect width='1' height='1' fill='rgba(0,0,0,.04)'/%3E%3C/svg%3E");opacity:.6}
+.ltape-name{font-family:'Space Mono',monospace;font-size:7px;font-weight:700;letter-spacing:1px;color:rgba(0,0,0,.7);position:relative;z-index:1;text-shadow:0 1px 2px rgba(255,255,255,.8)}
+.ltape-num{font-family:'Space Mono',monospace;font-size:6px;color:rgba(0,0,0,.4);position:relative;z-index:1}
+/* Cassette window */
+.ltape-window{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);width:52px;height:16px;background:rgba(0,0,0,.32);border-radius:3px;z-index:3;display:flex;align-items:center;justify-content:space-around;padding:0 7px;backdrop-filter:blur(2px)}
+.ltape-reel{width:11px;height:11px;border-radius:50%;background:radial-gradient(circle at 35% 35%,rgba(255,255,255,.3),rgba(0,0,0,.6));border:1.5px solid rgba(255,255,255,.25);transition:animation .3s}
+.ltape:hover .ltape-reel{animation:spin 1s linear infinite}
+/* Screws */
+.ltape-screw{position:absolute;width:7px;height:7px;border-radius:50%;background:radial-gradient(circle at 35% 35%,rgba(255,255,255,.4),rgba(0,0,0,.5));border:1px solid rgba(255,255,255,.18);z-index:3;box-shadow:0 1px 2px rgba(0,0,0,.4)}
+/* Tape ribbon */
+.ltape-ribbon{position:absolute;bottom:7px;left:50%;transform:translateX(-50%);width:30px;height:3px;background:rgba(0,0,0,.25);border-radius:2px;z-index:3}
+/* Scratch lines */
+.ltape-scratch{position:absolute;background:rgba(255,255,255,.08);z-index:3;border-radius:1px;pointer-events:none}
+/* Deco */
+.ltape-deco{position:absolute;font-size:9px;z-index:3;opacity:.75;pointer-events:none}
+/* Floating animation */
+.ltape{animation:ltapeIn .6s cubic-bezier(.34,1.56,.64,1) both, ltapeFloat 4s ease-in-out infinite}
+@keyframes ltapeFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.ltape:hover{animation:none}
+/* Star sparkle on hover */
+.ltape-spark{position:absolute;top:3px;right:4px;font-size:10px;opacity:0;transform:scale(0);transition:all .3s cubic-bezier(.34,1.56,.64,1);z-index:5}
+.ltape:hover .ltape-spark{opacity:1;transform:scale(1)}
+
+.lg-cta{display:inline-flex;align-items:center;gap:10px;padding:16px 52px;border-radius:50px;border:none;background:linear-gradient(135deg,#7c3aed,#db2777);color:#fff;font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;cursor:none;box-shadow:0 8px 36px rgba(109,40,217,.45),0 2px 0 rgba(255,255,255,.25) inset;transition:all .35s cubic-bezier(.34,1.56,.64,1);animation:fadeUp .7s 1s both;position:relative;overflow:hidden}
+.lg-cta::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.15),transparent);border-radius:50px}
+.lg-cta:hover{transform:translateY(-5px) scale(1.05);box-shadow:0 18px 52px rgba(109,40,217,.55)}
+.cta-spark{display:inline-block;animation:sparkRot 2.5s linear infinite}
+@keyframes sparkRot{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.lg-credit{margin-top:20px;font-family:'Space Mono',monospace;font-size:9px;color:rgba(109,40,217,.5);letter-spacing:1px;animation:fadeUp .7s 1.2s both}
+
+/* OPENING ANIMATION OVERLAY */
+#tape-insert-overlay{position:fixed;inset:0;z-index:700;background:rgba(13,17,23,0);pointer-events:none;display:flex;align-items:center;justify-content:center;transition:background .5s ease}
+#tape-insert-overlay.active{pointer-events:all;background:rgba(13,17,23,.85)}
+#insert-tape{width:180px;height:120px;border-radius:16px;position:absolute;opacity:0;transform:translateY(0) scale(0);transition:none;box-shadow:0 20px 60px rgba(0,0,0,.6);z-index:2}
+#insert-tape.lift{animation:tapeLift .6s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes tapeLift{0%{opacity:0;transform:scale(.8) translateY(0)}100%{opacity:1;transform:scale(1.1) translateY(-40px)}}
+#insert-tape.slide{animation:tapeSlide .7s cubic-bezier(.4,0,.2,1) .6s both}
+@keyframes tapeSlide{0%{opacity:1;transform:scale(1.1) translateY(-40px)}100%{opacity:0;transform:scale(.6) translateY(-200px)}}
+#player-mouth{width:280px;height:30px;background:linear-gradient(180deg,#2a2a40,#1a1a2e);border-radius:8px;border:1px solid rgba(255,255,255,.1);position:absolute;bottom:48%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,.5);z-index:1;opacity:0;transition:opacity .4s .8s ease}
+#player-mouth.show{opacity:1}
+.pm-slot{width:160px;height:8px;background:rgba(0,0,0,.6);border-radius:4px;border:1px solid rgba(255,255,255,.08)}
+
+/* ═══ APP SHELL ═══ */
+#app{display:none;height:100vh}
+.appwrap{display:flex;height:100vh;overflow:hidden}
+
+/* ═══ SIDEBAR ═══ */
+.sb{width:234px;min-width:234px;background:var(--s1);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.sb-head{padding:16px 15px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:9px}
+.sb-lt{font-family:'DM Serif Display',serif;font-size:19px;background:linear-gradient(135deg,#a855f7,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sb-ls{font-family:'Space Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:1px}
+.sb-lbl{font-family:'Space Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;padding:11px 15px 5px}
+.sb-list{overflow-y:auto;flex:1;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.05) transparent}
+.nt{display:flex;align-items:center;gap:9px;padding:8px 13px;cursor:none;position:relative;transition:background .2s}
+.nt:hover{background:rgba(255,255,255,.04)}
+.nt.on{background:rgba(168,85,247,.1)}
+.nt.on::before{content:'';position:absolute;left:0;top:5px;bottom:5px;width:3px;background:var(--dc);border-radius:0 2px 2px 0}
+/* Sidebar mini cassette — with rich details */
+.nt-tape{width:46px;height:30px;border-radius:6px;position:relative;overflow:hidden;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+.nt-tape-gloss{position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.22) 0%,transparent 55%);pointer-events:none;z-index:2;border-radius:6px}
+.nt-window{position:absolute;bottom:5px;left:50%;transform:translateX(-50%);width:28px;height:9px;background:rgba(0,0,0,.35);border-radius:2px;display:flex;align-items:center;justify-content:space-around;padding:0 4px;z-index:1}
+.nt-r{width:5px;height:5px;border-radius:50%;background:radial-gradient(circle at 35% 35%,rgba(255,255,255,.3),rgba(0,0,0,.7));border:1px solid rgba(255,255,255,.2)}
+.nt-info{flex:1;min-width:0}
+.nt-day{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+.nt-pct{font-family:'Space Mono',monospace;font-size:8px;color:var(--muted)}
+.nt-ring{width:22px;height:22px;flex-shrink:0}
+.sb-bot{padding:13px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:7px}
+.streakbox{display:flex;align-items:center;gap:9px;padding:9px 11px;background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.15);border-radius:12px}
+.sn{font-family:'Space Mono',monospace;font-size:21px;font-weight:700;color:#f97316}
+.ss{font-size:8px;color:var(--muted)}
+.sb-btns{display:flex;gap:6px}
+.sb-btn{flex:1;padding:7px;border-radius:9px;border:1px solid var(--border);background:var(--s2);color:var(--muted);cursor:none;font-size:11px;font-family:'Space Grotesk',sans-serif;transition:all .2s}
+.sb-btn:hover{border-color:var(--accent);color:var(--accent)}
+.sb-done{flex:1;padding:7px;border-radius:9px;border:none;background:linear-gradient(135deg,#a855f7,#6366f1);color:#fff;cursor:none;font-size:10px;font-weight:700;font-family:'Space Grotesk',sans-serif;transition:all .2s}
+.sb-done:hover{filter:brightness(1.15)}
+.sb-credit{text-align:center;font-family:'Space Mono',monospace;font-size:7px;color:rgba(255,255,255,.12);letter-spacing:1px;padding-top:4px}
+
+/* ═══ MAIN ═══ */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{padding:12px 20px;border-bottom:1px solid var(--border);background:var(--s1);display:flex;align-items:center;gap:12px}
+.tb-nav{background:none;border:1px solid var(--border);border-radius:7px;padding:4px 9px;color:var(--muted);cursor:none;font-size:12px;transition:all .2s}
+.tb-nav:hover{border-color:var(--accent);color:var(--accent)}
+.tb-badge{background:var(--s2);border:1px solid var(--border);border-radius:7px;padding:2px 9px;font-family:'Space Mono',monospace;font-size:9px}
+.tb-day{font-family:'DM Serif Display',serif;font-size:22px;transition:color .4s}
+.tb-date{color:var(--muted);font-size:10px}
+.tb-sp{flex:1}
+.tb-eq{display:none;align-items:flex-end;gap:2px;height:14px;margin-right:4px}
+.tb-eq-b{width:3px;border-radius:1px;background:var(--accent);animation:eqAnim ease-in-out infinite}
+.tb-act{background:none;border:1px solid var(--border);border-radius:8px;padding:5px 11px;color:var(--muted);cursor:none;font-size:10px;font-family:'Space Grotesk',sans-serif;transition:all .2s}
+.tb-act:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ═══ CONTENT ═══ */
+.cgrid{flex:1;display:grid;grid-template-columns:1fr 310px;overflow:hidden}
+.cc{overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:13px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.04) transparent}
+.rc{overflow-y:auto;padding:16px;border-left:1px solid var(--border);display:flex;flex-direction:column;gap:12px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.04) transparent}
+.card{background:var(--s1);border:1px solid var(--border);border-radius:17px;padding:16px}
+.ctitle{font-family:'Space Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:11px;display:flex;align-items:center;gap:6px}
+.ccnt{background:var(--s2);padding:1px 7px;border-radius:20px;font-size:8px}
+
+/* ═══ HERO CASSETTE ═══ */
+.ch{display:flex;gap:18px;align-items:center}
+/* Rich 3D cassette */
+.chtape{width:196px;height:132px;border-radius:15px;flex-shrink:0;position:relative;overflow:hidden;cursor:none;
+  box-shadow:0 12px 44px rgba(0,0,0,.55),0 2px 0 rgba(255,255,255,.13) inset,0 -2px 0 rgba(0,0,0,.3) inset;
+  transition:transform .4s cubic-bezier(.34,1.56,.64,1),box-shadow .3s;
+  animation:chtapeIn .7s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes chtapeIn{from{opacity:0;transform:rotateY(-25deg) scale(.78) translateX(-28px)}to{opacity:1;transform:none}}
+.chtape:hover{transform:translateY(-7px) rotateX(5deg) scale(1.03);box-shadow:0 22px 54px rgba(0,0,0,.6),0 0 30px rgba(var(--dcr),var(--dcg),var(--dcb),.25)}
+.chtape-bg{position:absolute;inset:0}
+/* Plastic texture + grain */
+.chtape-grain{position:absolute;inset:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.04'/%3E%3C/svg%3E");opacity:.6;z-index:1;border-radius:15px}
+/* Glossy highlight */
+.chtape-gloss{position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.2) 0%,rgba(255,255,255,.05) 40%,transparent 60%);pointer-events:none;z-index:4;border-radius:15px}
+/* Paper label */
+.chtape-label-area{position:absolute;top:12px;left:12px;right:12px;bottom:28px;border-radius:7px;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}
+.chtape-label-area::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='3' height='3'%3E%3Crect width='1' height='1' fill='rgba(0,0,0,.04)'/%3E%3C/svg%3E");opacity:.5}
+.chtape-num{font-family:'Space Mono',monospace;font-size:9px;color:rgba(0,0,0,.5);position:relative;z-index:1}
+.chtape-name{font-family:'DM Serif Display',serif;font-size:16px;color:rgba(0,0,0,.75);position:relative;z-index:1;letter-spacing:1px;text-shadow:0 1px 2px rgba(255,255,255,.6)}
+.chtape-theme{font-size:8px;color:rgba(0,0,0,.35);position:relative;z-index:1;font-family:'Space Mono',monospace;letter-spacing:.5px;margin-top:2px}
+/* Scratch lines */
+.chtape-scratch{position:absolute;background:rgba(255,255,255,.07);border-radius:1px;z-index:3;pointer-events:none}
+/* Screws */
+.chtape-screw{position:absolute;width:9px;height:9px;border-radius:50%;background:radial-gradient(circle at 35% 35%,rgba(255,255,255,.35),rgba(0,0,0,.5));border:1.5px solid rgba(255,255,255,.18);z-index:5;box-shadow:0 1px 3px rgba(0,0,0,.5)}
+/* Window with ribbon */
+.chtape-window{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:100px;height:22px;background:rgba(0,0,0,.38);border-radius:4px;z-index:3;display:flex;align-items:center;justify-content:space-around;padding:0 14px;backdrop-filter:blur(3px);border:1px solid rgba(255,255,255,.1)}
+.ch-reel{width:16px;height:16px;border-radius:50%;background:radial-gradient(circle at 35% 35%,rgba(255,255,255,.3),rgba(0,0,0,.7));border:2px solid rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center}
+.ch-reel::before{content:'';width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18)}
+.ch-reel.spin{animation:spin 2s linear infinite}
+/* Ribbon between reels */
+.chtape-ribbon-line{position:absolute;bottom:17px;left:50%;transform:translateX(-50%);width:36px;height:2px;background:rgba(0,0,0,.3);border-radius:1px;z-index:3}
+/* Flower doodles */
+.chtape-deco{position:absolute;font-size:10px;z-index:3;opacity:.65;pointer-events:none}
+/* Sparkle */
+.chtape-sparkles{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .3s;z-index:6}
+.sp-dot{position:absolute;border-radius:50%;animation:sparklePop .7s ease-out infinite}
+@keyframes sparklePop{0%,100%{transform:scale(0);opacity:0}50%{transform:scale(1);opacity:1}}
+.chtape:hover .chtape-sparkles{opacity:1}
+
+.ch-info{flex:1}
+.ch-info h2{font-family:'DM Serif Display',serif;font-size:21px;margin-bottom:2px}
+.ch-date{color:var(--muted);font-size:10px;margin-bottom:13px}
+.prow{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:4px}
+.pnum{font-family:'Space Grotesk',sans-serif;font-weight:700}
+/* Ribbon progress */
+.ribtrack{height:10px;background:var(--s2);border-radius:5px;overflow:hidden;margin-bottom:12px;border:1px solid rgba(255,255,255,.04)}
+.ribfill{height:100%;border-radius:5px;transition:width 1s cubic-bezier(.34,1.56,.64,1);position:relative;overflow:hidden}
+.ribfill::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,rgba(0,0,0,.12) 0,rgba(0,0,0,.12) 2px,transparent 2px,transparent 6px)}
+.stats-r{display:flex;gap:22px;margin-bottom:14px}
+.sv{font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700}
+.sl{font-size:9px;color:var(--muted)}
+.playbtn{display:inline-flex;align-items:center;gap:8px;padding:11px 28px;border-radius:50px;border:none;color:#fff;font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:700;cursor:none;letter-spacing:.8px;transition:all .35s cubic-bezier(.34,1.56,.64,1);position:relative;overflow:hidden}
+.playbtn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.18),transparent)}
+.playbtn:hover{transform:translateY(-4px) scale(1.05);filter:brightness(1.15)}
+
+/* ═══ THOUGHT ═══ */
+.tw{position:relative}
+.tpin{position:absolute;top:-7px;left:50%;transform:translateX(-50%);width:13px;height:13px;background:#ef4444;border-radius:50%;border:2.5px solid #b91c1c;z-index:2;box-shadow:0 3px 10px rgba(239,68,68,.5)}
+.tc{background:linear-gradient(145deg,#fef9c3,#fef3c7);border-radius:16px;padding:16px;position:relative;overflow:hidden;box-shadow:0 5px 20px rgba(0,0,0,.15)}
+.tc::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='3' height='3'%3E%3Crect width='1' height='1' fill='rgba(0,0,0,.04)'/%3E%3C/svg%3E")}
+.tc-lbl{font-family:'Space Mono',monospace;font-size:7px;font-weight:700;color:#92400e;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;position:relative}
+.tc-txt{font-family:'DM Serif Display',serif;font-size:14px;color:#1c1917;line-height:1.55;font-style:italic;position:relative}
+
+/* ═══ MOOD ═══ */
+.mrow{display:flex;gap:6px}
+.mb{flex:1;padding:9px 4px;border-radius:12px;border:1px solid var(--border);background:var(--s2);display:flex;flex-direction:column;align-items:center;gap:3px;cursor:none;transition:all .3s cubic-bezier(.34,1.56,.64,1)}
+.mb:hover{transform:translateY(-5px) scale(1.06);border-color:var(--accent)}
+.mb.on{border-color:var(--accent);background:rgba(168,85,247,.14);box-shadow:0 5px 18px rgba(168,85,247,.2)}
+.me{font-size:22px}
+.ml{font-family:'Space Mono',monospace;font-size:7px;color:var(--muted)}
+
+/* ═══ KANBAN ═══ */
+.kb{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.kc{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:11px;min-height:180px;transition:background .2s,border-color .2s}
+.kc.over{background:rgba(168,85,247,.06);border-color:rgba(168,85,247,.3)}
+.kch{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.kct{font-size:10px;font-weight:700}
+.kcc{background:var(--s2);width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-size:8px;color:var(--muted)}
+.tk{background:var(--s2);border:1px solid var(--border);border-radius:9px;padding:8px 10px;margin-bottom:5px;cursor:grab;transition:all .25s cubic-bezier(.34,1.56,.64,1);animation:tkIn .4s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes tkIn{from{opacity:0;transform:translateY(10px) scale(.94)}to{opacity:1;transform:none}}
+.tk:hover{transform:translateY(-3px);box-shadow:0 7px 22px rgba(0,0,0,.3)}
+.tk.dragging{opacity:.35;transform:scale(.94)}
+.tk-h{display:flex;align-items:flex-start;gap:6px;margin-bottom:4px}
+.tk-e{font-size:14px;flex-shrink:0;margin-top:1px}
+.tk-t{font-size:11px;font-weight:600;flex:1;line-height:1.3}
+/* Check button with sparkle */
+.tk-chk{width:16px;height:16px;border-radius:50%;border:2px solid var(--border);cursor:none;flex-shrink:0;margin-top:2px;transition:all .3s cubic-bezier(.34,1.56,.64,1);display:flex;align-items:center;justify-content:center;font-size:9px}
+.tk-chk.done{background:var(--accent);border-color:var(--accent);animation:chkPop .4s cubic-bezier(.34,1.56,.64,1)}
+@keyframes chkPop{0%{transform:scale(0) rotate(-180deg)}70%{transform:scale(1.3) rotate(10deg)}100%{transform:scale(1) rotate(0)}}
+.tk-m{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.tk-tag{font-size:8px;padding:2px 5px;border-radius:7px;background:rgba(255,255,255,.05);font-family:'Space Mono',monospace}
+.tk-dur{font-size:8px;color:var(--muted);font-family:'Space Mono',monospace}
+.tk-imgs{display:flex;gap:3px;margin-top:4px;flex-wrap:wrap}
+.tk-img{width:36px;height:36px;border-radius:5px;object-fit:cover;border:1px solid var(--border);cursor:none;transition:all .2s}
+.tk-img:hover{transform:scale(1.15);box-shadow:0 4px 10px rgba(0,0,0,.4)}
+.add-tk{width:100%;padding:6px;border:1.5px dashed rgba(255,255,255,.08);border-radius:7px;background:none;color:var(--muted);font-size:9px;cursor:none;font-family:'Space Grotesk',sans-serif;transition:all .2s}
+.add-tk:hover{border-color:var(--accent);color:var(--accent)}
+/* Empty state */
+.k-empty{text-align:center;padding:22px 0;color:var(--muted);font-size:10px;font-family:'Space Mono',monospace;opacity:.6}
+
+/* ═══ WEEK SHELF ═══ */
+.ws{display:flex;gap:7px;padding:13px;align-items:flex-end;background:linear-gradient(180deg,#3d2314,#2a1508);border-radius:13px;position:relative;min-height:84px}
+.ws::after{content:'';position:absolute;bottom:0;left:0;right:0;height:8px;background:linear-gradient(180deg,#9B6A3C,#6B4423);border-radius:0 0 13px 13px}
+.wt{flex:1;min-width:0;height:60px;border-radius:7px;cursor:none;position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:transform .35s cubic-bezier(.34,1.56,.64,1),box-shadow .3s}
+.wt:hover{transform:translateY(-14px);box-shadow:0 18px 36px rgba(0,0,0,.55),0 0 20px var(--sc)}
+.wt-gloss{position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.2),transparent 55%);border-radius:7px;pointer-events:none;z-index:2}
+.wt-day{font-family:'Space Mono',monospace;font-size:6.5px;font-weight:700;color:rgba(255,255,255,.9);writing-mode:vertical-rl;position:relative;z-index:1;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.wt-prog{width:70%;height:2px;background:rgba(0,0,0,.3);border-radius:2px;margin:3px 0;position:relative;z-index:1}
+.wt-fill{height:100%;border-radius:2px;background:rgba(255,255,255,.55);transition:width .8s ease}
+.wt-star{position:absolute;top:2px;right:2px;font-size:10px;z-index:3;animation:starPulse 2s ease-in-out infinite}
+@keyframes starPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
+
+/* ═══ STATS ═══ */
+.sg{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.sbox{background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:12px}
+.sn{font-family:'Space Grotesk',sans-serif;font-size:19px;font-weight:700;margin-bottom:2px}
+.ss{font-size:8px;color:var(--muted)}
+
+/* ═══ SPOTIFY EMBED ═══ */
+.spotify-wrap{border-radius:12px;overflow:hidden;background:#000;margin-bottom:8px;border:1px solid rgba(29,185,84,.2)}
+.spotify-wrap iframe{display:block;width:100%;border:none}
+.spotify-label{font-family:'Space Mono',monospace;font-size:8px;color:#1db954;letter-spacing:1px;text-transform:uppercase;margin-bottom:7px;display:flex;align-items:center;gap:5px}
+.sp-eq{display:inline-flex;align-items:flex-end;gap:1.5px;height:10px}
+.sp-eq-b{width:2px;border-radius:1px;background:#1db954;animation:eqAnim ease-in-out infinite}
+.day-playlist-label{font-size:10px;color:var(--muted);margin-bottom:8px;font-family:'Inter',sans-serif}
+.day-playlist-label strong{color:#1db954}
+
+/* ═══ WALKMAN ═══ */
+.walkman{background:linear-gradient(180deg,#2a2a3e,#1a1a2e);border-radius:19px;padding:18px;border:1px solid rgba(168,85,247,.18);box-shadow:0 8px 32px rgba(168,85,247,.08)}
+.wk-body{background:linear-gradient(180deg,#252540,#1c1c30);border-radius:13px;padding:15px;margin-bottom:13px;border:1px solid rgba(255,255,255,.05);position:relative;overflow:hidden}
+.wk-screen{background:linear-gradient(180deg,#0a1628,#0d1f3c);border-radius:9px;padding:11px;margin-bottom:11px;border:1px solid rgba(100,149,237,.2);position:relative;overflow:hidden}
+.wk-screen::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(100,149,237,.06),transparent);border-radius:9px}
+.wk-marquee{font-family:'Space Mono',monospace;font-size:7px;color:#6495ed;letter-spacing:2px;animation:marquee 10s linear infinite;white-space:nowrap;margin-bottom:4px}
+@keyframes marquee{0%{transform:translateX(100%)}100%{transform:translateX(-100%)}}
+.wk-time{font-family:'Space Mono',monospace;font-size:34px;font-weight:700;color:#e0e8ff;letter-spacing:3px;text-align:center;text-shadow:0 0 20px rgba(100,149,237,.5)}
+.wk-reels{display:flex;justify-content:center;gap:38px;margin-top:9px}
+.wk-reel{width:20px;height:20px;border-radius:50%;background:radial-gradient(circle at 35% 35%,rgba(255,255,255,.2),rgba(0,0,0,.7));border:2px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center}
+.wk-reel::before{content:'';width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18)}
+.wk-reel.spin{animation:spin 1.3s linear infinite}
+.wk-slot{width:80%;height:7px;background:rgba(0,0,0,.5);border-radius:4px;margin:8px auto 0;border:1px solid rgba(255,255,255,.07);overflow:hidden;position:relative}
+.wk-slot-fill{height:100%;background:linear-gradient(90deg,#a855f7,#6366f1);border-radius:4px;transition:width 1s ease;overflow:hidden}
+.wk-slot-fill::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,rgba(0,0,0,.15) 0,rgba(0,0,0,.15) 2px,transparent 2px,transparent 5px)}
+.wk-ctrls{display:flex;justify-content:center;gap:7px;margin-bottom:9px}
+.wk-btn{width:34px;height:34px;border-radius:50%;border:none;background:linear-gradient(180deg,#3a3a5c,#252540);color:rgba(255,255,255,.7);cursor:none;display:flex;align-items:center;justify-content:center;font-size:12px;transition:all .2s;box-shadow:0 3px 8px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.1)}
+.wk-btn:hover{background:linear-gradient(180deg,#4a4a7c,#353560);color:#fff;transform:translateY(-1px)}
+.wk-btn:active{transform:translateY(1px)}
+.wk-btn.big{width:42px;height:42px;background:linear-gradient(180deg,#a855f7,#6366f1);color:#fff;box-shadow:0 4px 14px rgba(168,85,247,.5)}
+.wk-btn.big:hover{filter:brightness(1.15)}
+.mrow2{display:flex;gap:5px;margin-bottom:10px}
+.modet{flex:1;padding:5px;border-radius:7px;border:1px solid var(--border);background:var(--s2);color:var(--muted);font-size:8px;font-weight:700;cursor:none;transition:all .2s;font-family:'Space Grotesk',sans-serif;letter-spacing:.3px}
+.modet.on{background:linear-gradient(135deg,#a855f7,#6366f1);border-color:transparent;color:#fff}
+.vibeg{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.vb{aspect-ratio:1;border-radius:9px;border:1px solid var(--border);background:var(--s2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:none;transition:all .25s cubic-bezier(.34,1.56,.64,1);font-size:14px}
+.vb-l{font-size:6.5px;color:var(--muted)}
+.vb:hover{border-color:var(--accent);transform:translateY(-3px) scale(1.06)}
+.vb.on{border-color:var(--accent);background:rgba(168,85,247,.14)}
+
+/* ═══ AI ═══ */
+.ai-wrap{display:flex;flex-direction:column;height:280px}
+.ai-hd{display:flex;align-items:center;gap:7px;margin-bottom:10px}
+.ai-ic{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#a855f7,#06b6d4);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;animation:aiGlow 3s ease-in-out infinite}
+@keyframes aiGlow{0%,100%{box-shadow:0 0 0 0 rgba(168,85,247,.4)}50%{box-shadow:0 0 0 8px rgba(168,85,247,0)}}
+.ai-n{font-family:'DM Serif Display',serif;font-size:14px}
+.ai-s{font-family:'Space Mono',monospace;font-size:7px;color:var(--muted)}
+.ai-msgs{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin-bottom:8px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.04) transparent}
+.ai-m{padding:7px 10px;border-radius:11px;font-size:10px;line-height:1.5;max-width:95%;animation:tkIn .3s ease}
+.ai-m.u{background:rgba(168,85,247,.17);border:1px solid rgba(168,85,247,.25);align-self:flex-end}
+.ai-m.a{background:var(--s2);border:1px solid var(--border);align-self:flex-start;color:var(--muted)}
+.ai-m.a strong{color:var(--text)}
+.ai-row{display:flex;gap:5px}
+.ai-inp{flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--s2);color:var(--text);font-size:10px;font-family:'Inter',sans-serif;outline:none;cursor:text;transition:border-color .2s}
+.ai-inp:focus{border-color:var(--accent)}
+.ai-send{width:30px;height:30px;border-radius:8px;border:none;background:var(--accent);color:#fff;cursor:none;font-size:12px;transition:all .2s}
+.ai-send:hover{filter:brightness(1.1)}
+
+/* ═══ NOTES ═══ */
+.notes-ta{width:100%;height:82px;background:var(--s2);border:1px solid var(--border);border-radius:9px;padding:8px;color:var(--text);font-family:'Inter',sans-serif;font-size:11px;resize:none;outline:none;cursor:text;transition:border-color .2s;line-height:1.5}
+.notes-ta:focus{border-color:var(--accent)}
+
+/* ═══ ATTACHMENTS ═══ */
+.att-g{display:flex;gap:6px;flex-wrap:wrap}
+.att-i{width:52px;height:52px;border-radius:8px;object-fit:cover;border:1px solid var(--border);cursor:none;transition:all .25s}
+.att-i:hover{transform:scale(1.12);box-shadow:0 5px 15px rgba(0,0,0,.4)}
+.att-addbtn{width:52px;height:52px;border-radius:8px;border:1.5px dashed rgba(255,255,255,.1);background:none;color:var(--muted);font-size:20px;cursor:none;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.att-addbtn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ═══ MODALS ═══ */
+.mbg{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(8px);z-index:800;display:none;align-items:center;justify-content:center}
+.mbg.open{display:flex;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal{background:var(--s1);border:1px solid var(--border);border-radius:22px;padding:24px;position:relative;animation:mIn .4s cubic-bezier(.34,1.56,.64,1)}
+@keyframes mIn{from{opacity:0;transform:scale(.82) translateY(22px)}to{opacity:1;transform:none}}
+.mclose{position:absolute;top:12px;right:12px;background:var(--s2);border:1px solid var(--border);border-radius:7px;width:26px;height:26px;color:var(--muted);cursor:none;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.mclose:hover{border-color:var(--accent);color:var(--accent)}
+.mtitle{font-family:'DM Serif Display',serif;font-size:18px;margin-bottom:16px}
+.fg{margin-bottom:11px}
+.fl{font-family:'Space Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;display:block}
+.fi{width:100%;padding:8px 11px;border:1px solid var(--border);border-radius:9px;background:var(--s2);color:var(--text);font-size:12px;font-family:'Inter',sans-serif;outline:none;cursor:text;transition:border-color .2s}
+.fi:focus{border-color:var(--accent)}
+.frow{display:flex;gap:8px}
+.frow .fg{flex:1}
+.macts{display:flex;gap:7px;margin-top:15px}
+.btn-c{flex:1;padding:9px;border-radius:9px;border:1px solid var(--border);background:var(--s2);color:var(--muted);cursor:none;font-family:'Space Grotesk',sans-serif;font-size:12px;transition:all .2s}
+.btn-s{flex:1;padding:9px;border-radius:9px;border:none;background:var(--accent);color:#fff;cursor:none;font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:700;transition:all .2s}
+.btn-s:hover{filter:brightness(1.1)}
+.ip-row{display:flex;gap:5px;flex-wrap:wrap}
+.ip-wrap{position:relative;display:inline-block}
+.ip-thumb{width:42px;height:42px;border-radius:6px;object-fit:cover;border:1px solid var(--border)}
+.ip-rm{position:absolute;top:-5px;right:-5px;width:14px;height:14px;border-radius:50%;background:#ef4444;color:#fff;font-size:8px;display:flex;align-items:center;justify-content:center;cursor:none;border:1px solid var(--s1)}
+.ip-add{width:42px;height:42px;border-radius:6px;border:1.5px dashed rgba(255,255,255,.1);background:none;color:var(--muted);cursor:none;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.ip-add:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ═══ SETTINGS ═══ */
+.stg{width:450px}
+.stg-sec{margin-bottom:14px}
+.stg-lbl{font-family:'Space Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px}
+.stg-row{display:flex;align-items:center;justify-content:space-between;padding:9px;background:var(--s2);border:1px solid var(--border);border-radius:9px;margin-bottom:5px}
+.stg-rl{font-size:12px}
+.stg-rs{font-size:8px;color:var(--muted)}
+.tog{width:38px;height:20px;border-radius:10px;background:var(--s2);border:1px solid var(--border);position:relative;cursor:none;transition:background .3s;flex-shrink:0}
+.tog.on{background:var(--accent);border-color:var(--accent)}
+.tog::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .3s;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.tog.on::after{transform:translateX(18px)}
+.col-r{display:flex;gap:6px;align-items:center}
+.cdot{width:20px;height:20px;border-radius:50%;cursor:none;border:2px solid transparent;transition:all .2s}
+.cdot:hover,.cdot.on{border-color:#fff;transform:scale(1.2)}
+.fbtn{padding:4px 9px;border-radius:7px;border:1px solid var(--border);background:var(--s1);color:var(--muted);font-size:10px;cursor:none;transition:all .2s;font-family:'Space Grotesk',sans-serif}
+.fbtn.on{border-color:var(--accent);color:var(--accent);background:rgba(168,85,247,.1)}
+.stg-creator{text-align:center;padding:10px;background:rgba(168,85,247,.06);border:1px solid rgba(168,85,247,.15);border-radius:10px;margin-bottom:14px}
+.stg-creator-name{font-family:'DM Serif Display',serif;font-size:16px;background:linear-gradient(135deg,#a855f7,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stg-creator-sub{font-family:'Space Mono',monospace;font-size:8px;color:var(--muted);margin-top:2px}
+
+/* ═══ COMPLETE ═══ */
+.co{position:fixed;inset:0;background:rgba(0,0,0,.82);backdrop-filter:blur(10px);z-index:900;display:none;align-items:center;justify-content:center}
+.co.open{display:flex}
+.co-card{background:var(--s1);border:1px solid rgba(168,85,247,.35);border-radius:28px;padding:44px;text-align:center;max-width:380px;animation:mIn .5s cubic-bezier(.34,1.56,.64,1);box-shadow:0 0 100px rgba(168,85,247,.22);position:relative;overflow:hidden}
+.co-tape{width:136px;height:90px;border-radius:13px;margin:0 auto 20px;position:relative;overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+.co-tape-bg{position:absolute;inset:0;border-radius:13px}
+.co-tape-gloss{position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.2),transparent);border-radius:13px}
+.co-title{font-family:'DM Serif Display',serif;font-size:28px;margin-bottom:6px}
+.co-sub{color:var(--muted);font-size:12px;margin-bottom:22px}
+.co-btn{padding:12px 36px;border-radius:50px;border:none;background:linear-gradient(135deg,#a855f7,#6366f1);color:#fff;font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;cursor:none;transition:all .3s}
+.co-btn:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(168,85,247,.45)}
+.co-credit{font-family:'Space Mono',monospace;font-size:7px;color:rgba(255,255,255,.2);margin-top:14px;letter-spacing:1px}
+.confbit{position:absolute;border-radius:50%;animation:cfFall linear infinite;pointer-events:none}
+@keyframes cfFall{0%{transform:translateY(-20px) rotate(0);opacity:1}100%{transform:translateY(140px) rotate(720deg);opacity:0}}
+
+/* ═══ LIGHTBOX ═══ */
+.lb{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:950;display:none;align-items:center;justify-content:center;cursor:none}
+.lb.open{display:flex;animation:fadeIn .2s ease}
+.lb img{max-width:90vw;max-height:90vh;border-radius:12px;box-shadow:0 0 80px rgba(0,0,0,.9)}
+
+/* ═══ NOTIF ═══ */
+.notif{position:fixed;top:16px;right:16px;background:var(--s1);border:1px solid var(--accent);border-radius:13px;padding:9px 15px;font-size:11px;z-index:1000;pointer-events:none;display:flex;align-items:center;gap:6px;box-shadow:0 8px 32px rgba(168,85,247,.25);opacity:0;transform:translateX(70px);transition:all .4s cubic-bezier(.34,1.56,.64,1);font-family:'Space Grotesk',sans-serif}
+.notif.show{opacity:1;transform:translateX(0)}
+
+/* ═══ SOUND FEEDBACK ═══ */
+.clickwave{position:fixed;border-radius:50%;border:2px solid rgba(168,85,247,.5);pointer-events:none;z-index:9999;animation:wavePop .5s ease-out forwards}
+@keyframes wavePop{0%{width:0;height:0;opacity:1;transform:translate(-50%,-50%)}100%{width:60px;height:60px;opacity:0;transform:translate(-50%,-50%)}}
+</style>
+
+</head>
+<body>
+
+<!-- CURSOR -->
+<div id="cdot"></div>
+<div id="cring"></div>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="loader-tape">
+    <div class="loader-reel l"></div>
+    <div class="loader-reel r"></div>
+  </div>
+  <div class="loader-logo">TaskTape</div>
+  <div class="loader-sub">by Manal Core · loading your mixtape...</div>
+  <div class="loader-dots">
+    <div class="loader-dot"></div>
+    <div class="loader-dot"></div>
+    <div class="loader-dot"></div>
+  </div>
+</div>
+
+<!-- TAPE INSERT OVERLAY -->
+<div id="tape-insert-overlay">
+  <div id="insert-tape"></div>
+  <div id="player-mouth"><div class="pm-slot"></div></div>
+</div>
+
+<!-- LANDING -->
+<div id="landing">
+  <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+  <div class="blob b4"></div><div class="blob b5"></div>
+  <div class="fp" style="left:6%;font-size:20px;animation-duration:13s">📼</div>
+  <div class="fp" style="left:17%;font-size:18px;animation-duration:10s;animation-delay:-3s">🎵</div>
+  <div class="fp" style="left:30%;font-size:16px;animation-duration:15s;animation-delay:-7s">✨</div>
+  <div class="fp" style="left:44%;font-size:22px;animation-duration:11s;animation-delay:-2s">🎶</div>
+  <div class="fp" style="left:58%;font-size:18px;animation-duration:14s;animation-delay:-9s">📼</div>
+  <div class="fp" style="left:72%;font-size:20px;animation-duration:9s;animation-delay:-4s">🌸</div>
+  <div class="fp" style="left:84%;font-size:16px;animation-duration:12s;animation-delay:-6s">⭐</div>
+  <div class="fp" style="left:92%;font-size:19px;animation-duration:16s;animation-delay:-1s">🎵</div>
+  <div class="gl" style="left:13%;top:20%;width:9px;height:9px;background:#c4b5fd;animation-duration:2.2s"></div>
+  <div class="gl" style="left:79%;top:16%;width:7px;height:7px;background:#f9a8d4;animation-duration:1.6s;animation-delay:-.5s"></div>
+  <div class="gl" style="left:32%;top:72%;width:11px;height:11px;background:#fde68a;animation-duration:2.7s;animation-delay:-1.1s"></div>
+  <div class="gl" style="left:67%;top:76%;width:8px;height:8px;background:#6ee7b7;animation-duration:1.9s;animation-delay:-.3s"></div>
+  <div class="gl" style="left:51%;top:9%;width:10px;height:10px;background:#93c5fd;animation-duration:2.4s;animation-delay:-.8s"></div>
+  <div class="mn" style="left:4%;top:26%;animation-duration:3.5s">🎵</div>
+  <div class="mn" style="right:5%;top:30%;animation-duration:4.2s;animation-delay:-1.5s">🎶</div>
+  <div class="mn" style="left:9%;bottom:26%;animation-duration:3s;animation-delay:-.8s;font-size:14px">♪</div>
+  <div class="mn" style="right:9%;bottom:22%;animation-duration:4.8s;animation-delay:-2.5s">♫</div>
+
+  <div class="lglass">
+    <div class="lg-logo-row">
+      <svg width="40" height="40" viewBox="0 0 44 44" fill="none">
+        <path d="M4 36L14 12L22 28L30 16L36 28" stroke="url(#lgg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="38" cy="8" r="3.5" fill="url(#lgg)"/>
+        <defs><linearGradient id="lgg" x1="0" y1="0" x2="44" y2="44"><stop stop-color="#7c3aed"/><stop offset="1" stop-color="#db2777"/></linearGradient></defs>
+      </svg>
+      <div><div class="lg-logo-name">TaskTape</div></div>
+    </div>
+
+    <!-- EQ bars -->
+    <div class="land-eq" style="justify-content:center">
+      <div class="land-eq-bar" style="--h:22px;animation-duration:.6s"></div>
+      <div class="land-eq-bar" style="--h:16px;animation-duration:.8s;animation-delay:.1s"></div>
+      <div class="land-eq-bar" style="--h:26px;animation-duration:.5s;animation-delay:.15s"></div>
+      <div class="land-eq-bar" style="--h:12px;animation-duration:.9s;animation-delay:.05s"></div>
+      <div class="land-eq-bar" style="--h:20px;animation-duration:.7s;animation-delay:.2s"></div>
+      <div class="land-eq-bar" style="--h:18px;animation-duration:.65s;animation-delay:.08s"></div>
+      <div class="land-eq-bar" style="--h:24px;animation-duration:.55s;animation-delay:.12s"></div>
+    </div>
+
+    <div class="lg-byline">Made with ♡ by Manal Core</div>
+    <div class="lg-h1">
+      <span class="lh1-a">Your week.</span>
+      <span class="lh1-b">Your mixtape.</span>
+    </div>
+    <p class="lg-sub">Plan your week one cassette at a time. 📼</p>
+    <div class="lg-shelf" id="lg-shelf"></div>
+    <button class="lg-cta" onclick="enterApp()">
+      <span class="cta-spark">✦</span> Start Your Week <span>▶</span>
+    </button>
+    <div class="lg-credit">Designed &amp; Developed by Manal Core · TaskTape v2</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+<div class="appwrap">
+
+<!-- SIDEBAR -->
+<div class="sb">
+  <div class="sb-head">
+    <svg width="26" height="26" viewBox="0 0 44 44" fill="none">
+      <path d="M4 36L14 12L22 28L30 16L36 28" stroke="url(#sbl)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="38" cy="8" r="3" fill="url(#sbl)"/>
+      <defs><linearGradient id="sbl" x1="0" y1="0" x2="44" y2="44"><stop stop-color="#a855f7"/><stop offset="1" stop-color="#06b6d4"/></linearGradient></defs>
+    </svg>
+    <div><div class="sb-lt">TaskTape</div><div class="sb-ls">your week. your mix. 💜</div></div>
+  </div>
+  <div class="sb-lbl">Week Tapes</div>
+  <div class="sb-list" id="sb-list"></div>
+  <div class="sb-bot">
+    <div class="streakbox">
+      <div style="font-size:22px">🔥</div>
+      <div><div class="sn">0</div><div class="ss">day streak · let's start!</div></div>
+    </div>
+    <div class="sb-btns">
+      <button class="sb-btn" onclick="openSettings()">⚙️ Settings</button>
+      <button class="sb-done" onclick="showComplete()">📼 Done!</button>
+    </div>
+    <div class="sb-credit">Designed by Manal Core</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <button class="tb-nav" onclick="navDay(-1)">‹</button>
+    <div class="tb-badge" id="tb-badge">001</div>
+    <div class="tb-day" id="tb-day" style="color:#a855f7">MONDAY</div>
+    <div class="tb-date" id="tb-date"></div>
+    <div class="tb-sp"></div>
+    <div class="tb-eq" id="tb-eq">
+      <div class="tb-eq-b" style="animation-duration:.6s;height:5px"></div>
+      <div class="tb-eq-b" style="animation-duration:.8s;animation-delay:.1s;height:9px"></div>
+      <div class="tb-eq-b" style="animation-duration:.5s;animation-delay:.15s;height:6px"></div>
+      <div class="tb-eq-b" style="animation-duration:.9s;animation-delay:.05s;height:4px"></div>
+    </div>
+    <button class="tb-act" onclick="openSettings()">⚙️</button>
+    <button class="tb-act" id="tb-play-btn" onclick="triggerPlay()">▶ Play Day</button>
+    <button class="tb-nav" onclick="navDay(1)">›</button>
+  </div>
+
+  <div class="cgrid">
+    <!-- CENTER -->
+    <div class="cc">
+
+      <!-- HERO CASSETTE -->
+      <div class="card" style="padding:17px">
+        <div class="ch">
+          <div class="chtape" id="chtape" onclick="triggerPlay()">
+            <div class="chtape-bg" id="chtape-bg"></div>
+            <div class="chtape-grain"></div>
+            <div class="chtape-gloss"></div>
+            <!-- Screws -->
+            <div class="chtape-screw" style="top:5px;left:5px"></div>
+            <div class="chtape-screw" style="top:5px;right:5px"></div>
+            <div class="chtape-screw" style="bottom:20px;left:5px"></div>
+            <div class="chtape-screw" style="bottom:20px;right:5px"></div>
+            <!-- Scratches -->
+            <div class="chtape-scratch" style="top:14px;left:16px;width:28px;height:1px;transform:rotate(-5deg)"></div>
+            <div class="chtape-scratch" style="top:22px;right:20px;width:18px;height:1px;transform:rotate(3deg)"></div>
+            <!-- Paper label -->
+            <div class="chtape-label-area" id="chtape-label-area">
+              <div class="chtape-num" id="chtape-num">001</div>
+              <div class="chtape-name" id="chtape-name">MONDAY</div>
+              <div class="chtape-theme" id="chtape-theme">Lavender Dream</div>
+            </div>
+            <!-- Deco flowers -->
+            <div class="chtape-deco" style="top:6px;left:8px" id="chtape-deco1">🌸</div>
+            <div class="chtape-deco" style="top:6px;right:8px" id="chtape-deco2">✦</div>
+            <!-- Window + reels -->
+            <div class="chtape-ribbon-line"></div>
+            <div class="chtape-window">
+              <div class="ch-reel" id="ch-rl"></div>
+              <div class="ch-reel" id="ch-rr"></div>
+            </div>
+            <!-- Sparkles on hover -->
+            <div class="chtape-sparkles">
+              <div class="sp-dot" style="width:6px;height:6px;background:#fff;top:10%;left:12%;animation-delay:0s;animation-duration:1.2s"></div>
+              <div class="sp-dot" style="width:5px;height:5px;background:#fde68a;top:18%;right:14%;animation-delay:.3s;animation-duration:.9s"></div>
+              <div class="sp-dot" style="width:7px;height:7px;background:#c4b5fd;bottom:22%;left:18%;animation-delay:.6s;animation-duration:1.1s"></div>
+              <div class="sp-dot" style="width:4px;height:4px;background:#f9a8d4;bottom:28%;right:20%;animation-delay:.1s;animation-duration:.8s"></div>
+            </div>
+          </div>
+          <div style="flex:1">
+            <h2 id="ch-name" style="font-family:'DM Serif Display',serif;font-size:20px;margin-bottom:2px">Monday</h2>
+            <div id="ch-date" style="color:var(--muted);font-size:10px;margin-bottom:12px"></div>
+            <div class="prow"><span>Progress</span><span class="pnum" id="prog-pct">0%</span></div>
+            <div class="ribtrack"><div class="ribfill" id="prog-fill" style="width:0%;background:#a855f7"></div></div>
+            <div class="stats-r">
+              <div><div class="sv" id="si-focus" style="color:#a855f7">0m</div><div class="sl">Focus Time</div></div>
+              <div><div class="sv" id="si-left">0</div><div class="sl">Tracks Left</div></div>
+            </div>
+            <button class="playbtn" id="play-btn" style="background:linear-gradient(135deg,#a855f7,#6366f1)" onclick="triggerPlay()">
+              <span id="play-icon">▶</span><span id="play-txt">PLAY DAY</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- THOUGHT -->
+      <div class="tw">
+        <div class="tpin"></div>
+        <div class="tc">
+          <div class="tc-lbl">📌 Thought of the Day</div>
+          <div class="tc-txt" id="thought-txt">"Small progress every day leads to big results."</div>
+        </div>
+      </div>
+
+      <!-- MOOD -->
+      <div class="card">
+        <div class="ctitle">Today's Vibe — How are you feeling?</div>
+        <div class="mrow">
+          <div class="mb" onclick="pickMood(this,'Happy 😊')"><div class="me">😊</div><div class="ml">Happy</div></div>
+          <div class="mb" onclick="pickMood(this,'Calm 😌')"><div class="me">😌</div><div class="ml">Calm</div></div>
+          <div class="mb" onclick="pickMood(this,'Tired 😴')"><div class="me">😴</div><div class="ml">Tired</div></div>
+          <div class="mb" onclick="pickMood(this,'Stressed 😤')"><div class="me">😤</div><div class="ml">Stressed</div></div>
+          <div class="mb" onclick="pickMood(this,'Motivated 🔥')"><div class="me">🔥</div><div class="ml">Motivated</div></div>
+        </div>
+      </div>
+
+      <!-- TRACKS KANBAN -->
+      <div>
+        <div class="ctitle">🎵 Tracks <span class="ccnt" id="total-cnt">11</span></div>
+        <div class="kb" id="kanban"></div>
+      </div>
+
+      <!-- ATTACHMENTS -->
+      <div class="card">
+        <div class="ctitle">📎 Attachments</div>
+        <div class="att-g" id="att-g">
+          <button class="att-addbtn" onclick="document.getElementById('att-file').click()">+</button>
+          <input type="file" id="att-file" style="display:none" accept="image/*" multiple onchange="addAtts(this)">
+        </div>
+      </div>
+
+      <!-- WEEK SHELF -->
+      <div class="card">
+        <div class="ctitle">📼 Week View — Your 7 tapes. Your story. 💜</div>
+        <div class="ws" id="week-shelf"></div>
+      </div>
+
+      <!-- STATS -->
+      <div class="card">
+        <div class="ctitle">📊 Tape Stats</div>
+        <div class="sg">
+          <div class="sbox"><div class="sn" style="color:#a855f7">0h 0m</div><div class="ss">Total Focus Time</div></div>
+          <div class="sbox"><div class="sn" style="color:#10B981" id="stat-done">0</div><div class="ss">Tracks Completed</div></div>
+          <div class="sbox"><div class="sn" style="color:#F97316" id="stat-rate">0%</div><div class="ss">Completion Rate</div></div>
+          <div class="sbox"><div class="sn" style="color:#F59E0B">0 🔥</div><div class="ss">Current Streak</div></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT COL -->
+    <div class="rc">
+
+      <!-- SPOTIFY EMBEDDED PLAYER -->
+      <div class="card">
+        <div class="ctitle">
+          🎵 Today's Mix
+          <span class="sp-eq" id="sp-eq" style="display:none">
+            <div class="sp-eq-b" style="animation-duration:.6s;height:4px"></div>
+            <div class="sp-eq-b" style="animation-duration:.8s;animation-delay:.1s;height:8px"></div>
+            <div class="sp-eq-b" style="animation-duration:.7s;animation-delay:.2s;height:5px"></div>
+          </span>
+        </div>
+        <div class="day-playlist-label">Today: <strong id="playlist-name">Lofi Study · Monday Mix</strong></div>
+        <div class="spotify-wrap">
+          <iframe id="spotify-iframe" src="https://open.spotify.com/embed/playlist/0vvXsWCC9xrXsKd4eEFDfe?utm_source=generator&theme=0" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+        </div>
+      </div>
+
+      <!-- WALKMAN FOCUS TIMER -->
+      <div class="walkman">
+        <div class="ctitle" style="margin-bottom:9px">⏱ Focus Timer · Walkman Edition</div>
+        <div class="wk-body">
+          <div class="wk-screen">
+            <div class="wk-marquee" id="wk-marquee">◀◀ TASKTAPE FOCUS · POMODORO SESSION ▶▶</div>
+            <div class="wk-time" id="wk-time">25:00</div>
+            <div class="wk-reels">
+              <div class="wk-reel" id="wkrl"></div>
+              <div class="wk-reel" id="wkrr"></div>
+            </div>
+          </div>
+          <div class="wk-slot"><div class="wk-slot-fill" id="wk-sfill" style="width:0%"></div></div>
+        </div>
+        <div class="wk-ctrls">
+          <button class="wk-btn" onclick="resetTimer()">⏮</button>
+          <button class="wk-btn big" id="wk-play-btn" onclick="toggleTimer()">▶</button>
+          <button class="wk-btn">⏭</button>
+        </div>
+        <div class="mrow2">
+          <button class="modet on" onclick="setMode(this,25,'POMODORO')">Pomodoro</button>
+          <button class="modet" onclick="setMode(this,5,'SHORT BREAK')">Short</button>
+          <button class="modet" onclick="setMode(this,15,'LONG BREAK')">Long</button>
+        </div>
+        <div class="ctitle" style="margin-bottom:6px">Choose your vibe</div>
+        <div class="vibeg">
+          <button class="vb on" onclick="pickVibe(this)">🎵<span class="vb-l">Lo-fi</span></button>
+          <button class="vb" onclick="pickVibe(this)">🌧<span class="vb-l">Rain</span></button>
+          <button class="vb" onclick="pickVibe(this)">☕<span class="vb-l">Cafe</span></button>
+          <button class="vb" onclick="pickVibe(this)">🔊<span class="vb-l">Noise</span></button>
+          <button class="vb" onclick="pickVibe(this)">🎹<span class="vb-l">Piano</span></button>
+        </div>
+      </div>
+
+      <!-- AI -->
+      <div class="card ai-wrap">
+        <div class="ai-hd">
+          <div class="ai-ic">🎧</div>
+          <div><div class="ai-n">AI Music Producer</div><div class="ai-s">by Manal Core</div></div>
+        </div>
+        <div class="ai-msgs" id="ai-msgs">
+          <div class="ai-m a">🎧 <strong>Let's remix your day.</strong><br>Tell me what's on your plate and I'll plan your mixtape.</div>
+        </div>
+        <div class="ai-row">
+          <input class="ai-inp" id="ai-inp" placeholder="e.g. Physics exam in 3 days..." onkeydown="if(event.key==='Enter')sendAI()"/>
+          <button class="ai-send" onclick="sendAI()">➤</button>
+        </div>
+      </div>
+
+      <!-- NOTES -->
+      <div class="card">
+        <div class="ctitle">📝 Notes</div>
+        <textarea class="notes-ta" placeholder="Don't forget to revise formulas before solving problems..."></textarea>
+        <div style="font-size:8px;color:var(--muted);margin-top:4px;font-family:'Space Mono',monospace">Auto-saved · Markdown supported</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- ADD TRACK MODAL -->
+<div class="mbg" id="add-modal">
+  <div class="modal" style="width:420px">
+    <button class="mclose" onclick="closeM('add-modal')">✕</button>
+    <div class="mtitle">🎵 Add New Track</div>
+    <div class="fg"><label class="fl">Track Title *</label><input class="fi" id="f-title" placeholder="e.g. Study Physics Ch.3"></div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Duration</label><input class="fi" id="f-dur" placeholder="45 mins"></div>
+      <div class="fg"><label class="fl">Priority</label>
+        <select class="fi" id="f-pri"><option value="high">🔴 High</option><option value="medium" selected>🟡 Medium</option><option value="low">🟢 Low</option></select>
+      </div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Emoji</label><input class="fi" id="f-emoji" placeholder="📚" maxlength="2" style="font-size:18px"></div>
+      <div class="fg"><label class="fl">Tag</label><input class="fi" id="f-tag" placeholder="Study"></div>
+    </div>
+    <div class="fg"><label class="fl">Description</label><input class="fi" id="f-desc" placeholder="Optional notes..."></div>
+    <div class="fg">
+      <label class="fl">Add Pictures</label>
+      <div class="ip-row" id="ip-row">
+        <button class="ip-add" onclick="document.getElementById('modal-img').click()">+</button>
+        <input type="file" id="modal-img" style="display:none" accept="image/*" multiple onchange="previewImgs(this)">
+      </div>
+    </div>
+    <div class="macts">
+      <button class="btn-c" onclick="closeM('add-modal')">Cancel</button>
+      <button class="btn-s" onclick="saveTrack()">Add Track ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="mbg" id="settings-modal">
+  <div class="modal stg">
+    <button class="mclose" onclick="closeM('settings-modal')">✕</button>
+    <div class="mtitle">⚙️ Settings</div>
+    <div class="stg-creator">
+      <div style="font-size:10px;color:var(--muted);margin-bottom:4px;font-family:'Space Mono',monospace">Creator</div>
+      <div class="stg-creator-name">Manal Core</div>
+      <div class="stg-creator-sub">TaskTape v2 · Code · Design · AI · Future</div>
+    </div>
+    <div class="stg-sec">
+      <div class="stg-lbl">Appearance</div>
+      <div class="stg-row"><div><div class="stg-rl">Dark Mode</div><div class="stg-rs">Default dark theme</div></div><div class="tog on" onclick="this.classList.toggle('on')"></div></div>
+      <div class="stg-row">
+        <div><div class="stg-rl">Accent Color</div><div class="stg-rs">Customize your theme</div></div>
+        <div class="col-r">
+          <div class="cdot on" style="background:#a855f7" onclick="setAccent('#a855f7',this)"></div>
+          <div class="cdot" style="background:#ec4899" onclick="setAccent('#ec4899',this)"></div>
+          <div class="cdot" style="background:#06b6d4" onclick="setAccent('#06b6d4',this)"></div>
+          <div class="cdot" style="background:#10B981" onclick="setAccent('#10B981',this)"></div>
+          <div class="cdot" style="background:#F97316" onclick="setAccent('#F97316',this)"></div>
+          <div class="cdot" style="background:#db2777" onclick="setAccent('#db2777',this)"></div>
+        </div>
+      </div>
+      <div class="stg-row">
+        <div><div class="stg-rl">Font Style</div><div class="stg-rs">Choose your typeface</div></div>
+        <div style="display:flex;gap:5px">
+          <button class="fbtn on" onclick="setFont('Inter',this)">Inter</button>
+          <button class="fbtn" onclick="setFont(&quot;'Space Grotesk'&quot;,this)">Grotesk</button>
+          <button class="fbtn" onclick="setFont(&quot;'DM Serif Display',serif&quot;,this)">Serif</button>
+        </div>
+      </div>
+    </div>
+    <div class="stg-sec">
+      <div class="stg-lbl">Experience</div>
+      <div class="stg-row"><div><div class="stg-rl">Sound Effects</div><div class="stg-rs">Tape click & interface sounds</div></div><div class="tog on" id="tog-sound" onclick="this.classList.toggle('on');G.sounds=!G.sounds"></div></div>
+      <div class="stg-row"><div><div class="stg-rl">Animations</div><div class="stg-rs">Smooth transitions</div></div><div class="tog on" onclick="this.classList.toggle('on')"></div></div>
+      <div class="stg-row"><div><div class="stg-rl">Cursor Trail</div><div class="stg-rs">Magical sparkle effect</div></div><div class="tog on" id="tog-trail" onclick="this.classList.toggle('on');G.trail=!G.trail"></div></div>
+      <div class="stg-row"><div><div class="stg-rl">Auto-play on ▶ Play Day</div><div class="stg-rs">Start timer + music together</div></div><div class="tog on" onclick="this.classList.toggle('on')"></div></div>
+    </div>
+    <div class="stg-sec">
+      <div class="stg-lbl">Data</div>
+      <div class="stg-row"><div><div class="stg-rl">Cloud Sync</div><div class="stg-rs">Sync across devices</div></div><div class="tog" onclick="this.classList.toggle('on');showNotif('Cloud sync coming soon! ☁️')"></div></div>
+      <div class="stg-row"><div><div class="stg-rl">Export Data</div><div class="stg-rs">Download your week tapes</div></div><button class="fbtn" onclick="showNotif('Export coming soon! 📦')">Export</button></div>
+      <div class="stg-row"><div><div class="stg-rl">Reset Week</div><div class="stg-rs">Clear all tracks</div></div><button class="fbtn" onclick="closeM('settings-modal');showNotif('Week reset! Fresh start 📼')">Reset</button></div>
+    </div>
+    <div class="macts">
+      <button class="btn-c" onclick="closeM('settings-modal')">Close</button>
+      <button class="btn-s" onclick="closeM('settings-modal');showNotif('Settings saved! ✨')">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- TAPE COMPLETE -->
+<div class="co" id="co">
+  <div style="position:absolute;inset:0" onclick="closeCo()"></div>
+  <div class="co-card">
+    <div id="conf-wrap" style="position:absolute;inset:0;overflow:hidden;border-radius:28px;pointer-events:none"></div>
+    <div class="co-tape">
+      <div class="co-tape-bg" id="co-tape-bg"></div>
+      <div class="co-tape-gloss"></div>
+      <div style="position:relative;z-index:1;text-align:center">
+        <div style="font-size:26px;margin-bottom:3px">⭐</div>
+        <div style="font-family:'Space Mono',monospace;font-size:10px;font-weight:700;color:#fff;letter-spacing:2px" id="co-dname">MONDAY</div>
+      </div>
+    </div>
+    <div class="co-title" id="co-title">Monday Complete!</div>
+    <div class="co-sub">Great work. See you tomorrow. 💜</div>
+    <button class="co-btn" onclick="closeCo()">⏏ Eject Tape</button>
+    <div class="co-credit">Made with ♡ by Manal Core</div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lb" id="lb" onclick="this.classList.remove('open')">
+  <img id="lb-img" src="" alt="">
+</div>
+
+<!-- NOTIFICATION -->
+<div class="notif" id="notif"><span id="notif-txt">Track added! 🎵</span></div>
+
+<script>
+// ═══ DATA ═══
+const DAYS=[
+  {name:'Monday',   short:'MON',num:'001',color:'#a855f7',pastel:'#e9d5ff',theme:'Lavender Dream',  deco:['🌸','✦'],playlist:'Lofi Study',  spotifyId:'0vvXsWCC9xrXsKd4eEFDfe'},
+  {name:'Tuesday',  short:'TUE',num:'002',color:'#db2777',pastel:'#fbcfe8',theme:'Sakura Pink',     deco:['🌺','🌸'],playlist:'Indie Vibes', spotifyId:'37i9dQZF1DX2sUQwD7tbmL'},
+  {name:'Wednesday',short:'WED',num:'003',color:'#d97706',pastel:'#fef08a',theme:'Sunny Bloom',     deco:['🌻','☀️'],playlist:'Jazz Focus',  spotifyId:'37i9dQZF1DWV7EzJpy6E7N'},
+  {name:'Thursday', short:'THU',num:'004',color:'#059669',pastel:'#bbf7d0',theme:'Forest Moss',     deco:['🍃','🍄'],playlist:'Nature Sounds',spotifyId:'37i9dQZF1DX4PP3DA4J0N8'},
+  {name:'Friday',   short:'FRI',num:'005',color:'#ea580c',pastel:'#fed7aa',theme:'Sunset Orange',   deco:['🌅','🔥'],playlist:'Chillhop',    spotifyId:'0vvXsWCC9xrXsKd4eEFDfe'},
+  {name:'Saturday', short:'SAT',num:'006',color:'#2563eb',pastel:'#bfdbfe',theme:'Ocean Blue',      deco:['🌊','🐋'],playlist:'Synthwave',   spotifyId:'37i9dQZF1DX3Oj2zvh4zVf'},
+  {name:'Sunday',   short:'SUN',num:'007',color:'#dc2626',pastel:'#fecaca',theme:'Strawberry Picnic',deco:['🍓','🌈'],playlist:'Calm Piano',  spotifyId:'37i9dQZF1DX4sWSpwq3LiO'},
+];
+const THOUGHTS=['\"Small progress every day leads to big results.\"','\"Your only limit is your mind.\"','\"Make today so awesome, yesterday gets jealous.\"','\"One track at a time. One day at a time.\"','\"Play the day like it\'s your favorite song.\"','\"Every great week starts with a single track.\"','\"The cassette doesn\'t stop until the tape ends.\"'];
+const AI_RESP=[
+  m=>`🎧 Remixed for **${m}**:\n🎵 Deep Focus Block (1h)\n🎵 Review Session (30m)\n🎵 Light Wrap-up (20m)\nAdding to today\'s tape?`,
+  m=>`🎧 Your mix for **${m}**:\n🔴 Priority: Core work (45m)\n🟡 Medium: Practice (30m)\n🟢 Light: Review (15m)\nLooks perfect! 📼`,
+  m=>`🎧 Study mix ready for **${m}**:\n🎵 Morning blocks (1h each)\n🎵 Afternoon reviews\n🎵 Evening prep\nYour day is remixed! ✨`,
+];
+
+let G={
+  day:new Date().getDay()===0?6:new Date().getDay()-1,
+  playing:false,timerOn:false,timerSecs:25*60,timerMode:25,timerInterval:null,
+  trail:true,sounds:true,addCol:0,nextId:1,modalImgs:[],atts:[],
+  dayTracks:null,
+  tracks:null,
+  prog:[0,0,0,0,0,0,0],
+};
+G.dayTracks = DAYS.map(()=>({0:[],1:[],2:[]}));
+G.tracks = G.dayTracks[G.day];
+
+// ═══ WEB AUDIO for UI sounds ═══
+let audioCtx=null;
+function getAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+function playTone(freq,dur,type='sine',vol=0.08){
+  if(!G.sounds) return;
+  try{
+    const ctx=getAudio(),osc=ctx.createOscillator(),gain=ctx.createGain();
+    osc.connect(gain);gain.connect(ctx.destination);
+    osc.type=type;osc.frequency.setValueAtTime(freq,ctx.currentTime);
+    gain.gain.setValueAtTime(vol,ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+dur);
+    osc.start();osc.stop(ctx.currentTime+dur);
+  }catch(e){}
+}
+function playClick(){playTone(800,.06,'square',.05);}
+function playCassetteInsert(){
+  if(!G.sounds) return;
+  try{
+    const ctx=getAudio();
+    [200,180,160,140].forEach((f,i)=>{
+      const o=ctx.createOscillator(),g=ctx.createGain();
+      o.connect(g);g.connect(ctx.destination);
+      o.type='sawtooth';o.frequency.value=f;
+      g.gain.setValueAtTime(.06,ctx.currentTime+i*.05);
+      g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+i*.05+.1);
+      o.start(ctx.currentTime+i*.05);o.stop(ctx.currentTime+i*.05+.15);
+    });
+  }catch(e){}
+}
+function playSparkle(){
+  if(!G.sounds) return;
+  [1200,1500,1800].forEach((f,i)=>playTone(f,.15,'sine',.04));
+}
+function playEject(){
+  if(!G.sounds) return;
+  try{
+    const ctx=getAudio();
+    [140,160,180,200].forEach((f,i)=>{
+      const o=ctx.createOscillator(),g=ctx.createGain();
+      o.connect(g);g.connect(ctx.destination);
+      o.type='sawtooth';o.frequency.value=f;
+      g.gain.setValueAtTime(.05,ctx.currentTime+i*.04);
+      g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+i*.04+.08);
+      o.start(ctx.currentTime+i*.04);o.stop(ctx.currentTime+i*.04+.12);
+    });
+  }catch(e){}
+}
+
+// ═══ CURSOR ═══
+const cdot=document.getElementById('cdot'),cring=document.getElementById('cring');
+let mx=0,my=0,rx=0,ry=0,ti=0;
+const TC=['#a855f7','#ec4899','#fde68a','#6ee7b7','#93c5fd','#fdba74','#fca5a5','#fff'];
+
+document.addEventListener('mousemove',e=>{
+  mx=e.clientX;my=e.clientY;
+  cdot.style.left=mx+'px';cdot.style.top=my+'px';
+  if(G.trail)spawnTrail(mx,my);
+});
+function spawnTrail(x,y){
+  const t=document.createElement('div'),sz=3+Math.random()*5;
+  t.className='ctrail';
+  t.style.cssText=`left:${x}px;top:${y}px;width:${sz}px;height:${sz}px;background:${TC[ti++%TC.length]}`;
+  document.body.appendChild(t);setTimeout(()=>t.remove(),700);
+}
+(function animRing(){rx+=(mx-rx)*.1;ry+=(my-ry)*.1;cring.style.left=rx+'px';cring.style.top=ry+'px';requestAnimationFrame(animRing);})();
+document.addEventListener('mousedown',e=>{
+  cdot.style.width='5px';cdot.style.height='5px';
+  cring.style.width='48px';cring.style.height='48px';
+  // Wave
+  const w=document.createElement('div');w.className='clickwave';
+  w.style.cssText=`left:${e.clientX}px;top:${e.clientY}px;border-color:rgba(168,85,247,.5)`;
+  document.body.appendChild(w);setTimeout(()=>w.remove(),500);
+  // Burst
+  const b=document.createElement('div');b.className='cburst';b.style.cssText=`left:${e.clientX}px;top:${e.clientY}px`;
+  for(let i=0;i<7;i++){
+    const p=document.createElement('div'),a=i*(360/7)*Math.PI/180,d=18+Math.random()*22;
+    p.className='cburst-p';
+    p.style.cssText=`width:${3+Math.random()*4}px;height:${3+Math.random()*4}px;background:${TC[i%TC.length]};--tx:${Math.cos(a)*d}px;--ty:${Math.sin(a)*d}px`;
+    b.appendChild(p);
+  }
+  document.body.appendChild(b);setTimeout(()=>b.remove(),600);
+  playClick();
+});
+document.addEventListener('mouseup',()=>{cdot.style.width='8px';cdot.style.height='8px';cring.style.width='32px';cring.style.height='32px';});
+
+// ═══ LOADER ═══
+window.addEventListener('load',()=>setTimeout(()=>{
+  const l=document.getElementById('loader');l.classList.add('gone');
+  setTimeout(()=>l.style.display='none',900);
+},1200));
+
+// ═══ LANDING SHELF ═══
+function buildLandingShelf(){
+  const shelf=document.getElementById('lg-shelf');
+  shelf.innerHTML=DAYS.map((d,i)=>`
+    <div class="ltape" style="background:linear-gradient(160deg,${d.pastel},${d.color});animation-delay:${i*.07+.9}s,${i*.15+.5}s" onclick="enterApp()" title="${d.theme}">
+      <div class="ltape-gloss"></div>
+      <div class="ltape-label" style="background:rgba(255,255,255,.35)">
+        <div class="ltape-num">00${i+1}</div>
+        <div class="ltape-name">${d.short}</div>
+      </div>
+      <div class="ltape-deco" style="top:4px;left:5px">${d.deco[0]}</div>
+      <div class="ltape-deco" style="top:4px;right:5px">${d.deco[1]}</div>
+      <div class="ltape-screw" style="top:3px;left:3px"></div>
+      <div class="ltape-screw" style="top:3px;right:3px"></div>
+      <div class="ltape-window">
+        <div class="ltape-reel"></div>
+        <div class="ltape-reel"></div>
+      </div>
+      <div class="ltape-ribbon"></div>
+      <div class="ltape-scratch" style="top:12px;left:10px;width:20px;height:1px;transform:rotate(-4deg)"></div>
+      <div class="ltape-spark">✨</div>
+    </div>
+  `).join('');
+}
+buildLandingShelf();
+
+// ═══ ENTER APP with opening animation ═══
+function enterApp(){
+  const d=DAYS[G.day];
+  const overlay=document.getElementById('tape-insert-overlay');
+  const insertTape=document.getElementById('insert-tape');
+  const mouth=document.getElementById('player-mouth');
+
+  // Style the insert tape
+  insertTape.style.cssText=`width:180px;height:120px;border-radius:16px;background:linear-gradient(160deg,${d.pastel},${d.color});box-shadow:0 20px 60px rgba(0,0,0,.6);position:absolute;opacity:0;`;
+
+  // Fade out landing
+  document.getElementById('landing').classList.add('out');
+
+  // Start opening animation
+  overlay.classList.add('active');
+  playCassetteInsert();
+
+  // Lift tape
+  setTimeout(()=>{insertTape.classList.add('lift');},200);
+  // Show player mouth
+  setTimeout(()=>{mouth.classList.add('show');},700);
+  // Slide tape in
+  setTimeout(()=>{insertTape.classList.remove('lift');insertTape.classList.add('slide');},900);
+
+  // Fade into app
+  setTimeout(()=>{
+    overlay.classList.remove('active');
+    overlay.style.display='none';
+    document.getElementById('landing').style.display='none';
+    document.getElementById('app').style.display='block';
+    buildSidebar();buildWeekShelf();selectDay(G.day);
+    // Auto start play
+    setTimeout(()=>{
+      document.getElementById('chtape').style.animation='chtapeIn .7s cubic-bezier(.34,1.56,.64,1) both';
+    },100);
+  },1600);
+}
+
+// ═══ SIDEBAR ═══
+function buildSidebar(){
+  const el=document.getElementById('sb-list');
+  el.innerHTML=DAYS.map((d,i)=>`
+    <div class="nt ${i===G.day?'on':''}" id="nt-${i}" style="--dc:${d.color}" onclick="selectDay(${i})">
+      <div class="nt-tape" style="background:linear-gradient(160deg,${d.pastel},${d.color})">
+        <div class="nt-tape-gloss"></div>
+        <div class="nt-window"><div class="nt-r"></div><div class="nt-r"></div></div>
+        <div style="position:absolute;top:2px;left:50%;transform:translateX(-50%);font-family:'Space Mono',monospace;font-size:5.5px;font-weight:700;color:rgba(255,255,255,.85);letter-spacing:.5px">${d.short}</div>
+      </div>
+      <div class="nt-info">
+        <div class="nt-day" style="color:${d.color}">${d.name}</div>
+        <div class="nt-pct" id="ntp-${i}">${G.prog[i]}% done</div>
+      </div>
+      <svg class="nt-ring" viewBox="0 0 26 26">
+        <circle cx="13" cy="13" r="10" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="2.5"/>
+        <circle cx="13" cy="13" r="10" fill="none" stroke="${d.color}" stroke-width="2.5"
+          stroke-dasharray="${2*Math.PI*10}" stroke-dashoffset="${2*Math.PI*10*(1-G.prog[i]/100)}"
+          stroke-linecap="round" transform="rotate(-90 13 13)" id="nr-${i}"/>
+      </svg>
+    </div>
+  `).join('');
+}
+function updateSidebar(){
+  DAYS.forEach((_,i)=>{
+    const n=document.getElementById(`nt-${i}`);if(n)n.classList.toggle('on',i===G.day);
+    const p=document.getElementById(`ntp-${i}`);if(p)p.textContent=G.prog[i]+'% done';
+    const r=document.getElementById(`nr-${i}`);if(r)r.setAttribute('stroke-dashoffset',2*Math.PI*10*(1-G.prog[i]/100));
+  });
+}
+
+// ═══ WEEK SHELF ═══
+function buildWeekShelf(){
+  const el=document.getElementById('week-shelf');
+  el.innerHTML=DAYS.map((d,i)=>`
+    <div class="wt" onclick="selectDay(${i})" style="--sc:${d.color};background:linear-gradient(160deg,${d.pastel},${d.color})">
+      <div class="wt-gloss"></div>
+      <div style="position:absolute;top:3px;left:3px;font-size:8px;opacity:.7;z-index:1">${d.deco[0]}</div>
+      ${G.prog[i]===100?`<div class="wt-star">⭐</div>`:''}
+      <div class="wt-day">${d.name.toUpperCase()}</div>
+      <div class="wt-prog"><div class="wt-fill" style="width:${G.prog[i]}%"></div></div>
+    </div>
+  `).join('');
+}
+
+// ═══ SELECT DAY ═══
+function selectDay(i){
+  G.day=i;const d=DAYS[i];
+  G.tracks=G.dayTracks[i];
+  document.getElementById('tb-badge').textContent=d.num;
+  const td=document.getElementById('tb-day');td.textContent=d.name.toUpperCase();td.style.color=d.color;
+  document.getElementById('tb-date').textContent=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  document.getElementById('chtape-bg').style.background=`linear-gradient(160deg,${d.pastel},${d.color})`;
+  document.getElementById('chtape-label-area').style.background=`rgba(255,255,255,.32)`;
+  document.getElementById('chtape-num').textContent=d.num;
+  document.getElementById('chtape-name').textContent=d.name.toUpperCase();
+  document.getElementById('chtape-theme').textContent=d.theme;
+  document.getElementById('chtape-deco1').textContent=d.deco[0];
+  document.getElementById('chtape-deco2').textContent=d.deco[1];
+  document.getElementById('ch-name').textContent=d.name;
+  document.getElementById('ch-date').textContent=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  document.getElementById('play-btn').style.background=`linear-gradient(135deg,${d.color},${d.color}cc)`;
+  document.getElementById('prog-fill').style.background=d.color;
+  document.getElementById('si-focus').style.color=d.color;
+  document.getElementById('thought-txt').textContent=THOUGHTS[i];
+  document.getElementById('playlist-name').textContent=`${d.playlist} · ${d.name} Mix`;
+  // Update Spotify embed
+  document.getElementById('spotify-iframe').src=`https://open.spotify.com/embed/playlist/${d.spotifyId}?utm_source=generator&theme=0`;
+  // Walkman marquee
+  document.getElementById('wk-marquee').textContent=`◀◀ ${d.name.toUpperCase()} · ${d.theme.toUpperCase()} · ${d.playlist.toUpperCase()} ▶▶`;
+  // Tape entrance animation
+  const tape=document.getElementById('chtape');tape.style.animation='none';void tape.offsetWidth;
+  tape.style.animation='chtapeIn .7s cubic-bezier(.34,1.56,.64,1) both';
+  updateProgress();renderKanban();updateSidebar();buildWeekShelf();
+}
+function navDay(d){let n=G.day+d;if(n<0)n=0;if(n>6)n=6;selectDay(n);}
+
+// ═══ PROGRESS ═══
+function calcProg(){
+  const t=(G.tracks[0]?.length||0)+(G.tracks[1]?.length||0)+(G.tracks[2]?.length||0);
+  return t===0?0:Math.round(((G.tracks[2]?.length||0)/t)*100);
+}
+function updateProgress(){
+  const p=calcProg();G.prog[G.day]=p;
+  document.getElementById('prog-pct').textContent=p+'%';
+  document.getElementById('prog-fill').style.width=p+'%';
+  document.getElementById('wk-sfill').style.width=p+'%';
+  const l=(G.tracks[0]?.length||0)+(G.tracks[1]?.length||0);
+  document.getElementById('si-left').textContent=l;
+  document.getElementById('stat-done').textContent=G.tracks[2]?.length||0;
+  document.getElementById('stat-rate').textContent=p+'%';
+  document.getElementById('total-cnt').textContent=l+(G.tracks[2]?.length||0);
+  updateSidebar();buildWeekShelf();
+}
+
+// ═══ KANBAN ═══
+const COLS=[{title:'🎵 To Play',k:0},{title:'▶ Playing',k:1},{title:'✔ Finished',k:2,col:'#10B981'}];
+function renderKanban(){
+  const d=DAYS[G.day];
+  document.getElementById('kanban').innerHTML=COLS.map(col=>`
+    <div class="kc" id="kc-${col.k}" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="dropTk(event,${col.k})">
+      <div class="kch">
+        <div class="kct" style="color:${col.col||d.color}">${col.title}</div>
+        <div class="kcc">${G.tracks[col.k]?.length||0}</div>
+      </div>
+      ${(G.tracks[col.k]?.length||0)===0?`<div class="k-empty">📼 Ready to record?<br>Add your first Track.</div>`:''}
+      ${(G.tracks[col.k]||[]).map(t=>`
+        <div class="tk" draggable="true" ondragstart="startDrag(event,${t.id})"
+          style="border-left:3px solid ${t.priority==='high'?'#EF4444':t.priority==='medium'?'#F59E0B':'#10B981'}">
+          <div class="tk-h">
+            <div class="tk-e">${t.emoji||'🎵'}</div>
+            <div class="tk-t">${t.title}</div>
+            <div class="tk-chk ${col.k===2?'done':''}" onclick="checkTk(${t.id},${col.k})">${col.k===2?'✓':''}</div>
+          </div>
+          <div class="tk-m">
+            ${t.desc?`<span class="tk-tag">${t.desc}</span>`:''}
+            ${t.tag?`<span class="tk-tag" style="color:${d.color}">#${t.tag}</span>`:''}
+            <span class="tk-dur">⏱ ${t.dur||'—'}</span>
+          </div>
+          ${t.imgs&&t.imgs.length?`<div class="tk-imgs">${t.imgs.map(s=>`<img class="tk-img" src="${s}" onclick="openLb('${s}')">`).join('')}</div>`:''}
+        </div>
+      `).join('')}
+      <button class="add-tk" onclick="openAdd(${col.k})">+ Add Track</button>
+    </div>
+  `).join('');
+}
+
+function checkTk(id,fromCol){
+  let track;
+  for(let c in G.tracks){const idx=G.tracks[c].findIndex(t=>t.id===id);if(idx>-1){[track]=G.tracks[c].splice(idx,1);break;}}
+  if(track){G.tracks[fromCol!==2?2:0]=G.tracks[fromCol!==2?2:0]||[];G.tracks[fromCol!==2?2:0].push(track);}
+  renderKanban();updateProgress();
+  playSparkle();showNotif(fromCol!==2?'Track completed! ✨':'Track moved back 📼');
+}
+let dragId=null;
+function startDrag(e,id){dragId=id;setTimeout(()=>e.target.classList.add('dragging'),0);}
+function dropTk(e,toCol){
+  e.preventDefault();document.querySelectorAll('.kc').forEach(c=>c.classList.remove('over'));
+  if(dragId===null)return;
+  let track;
+  for(let c in G.tracks){const idx=G.tracks[c].findIndex(t=>t.id===dragId);if(idx>-1){[track]=G.tracks[c].splice(idx,1);break;}}
+  if(track){G.tracks[toCol]=G.tracks[toCol]||[];G.tracks[toCol].push(track);}
+  dragId=null;renderKanban();updateProgress();showNotif('Track moved! 📼');
+}
+
+// ═══ ADD TRACK ═══
+function openAdd(col){
+  G.addCol=col;G.modalImgs=[];
+  ['f-title','f-dur','f-emoji','f-tag','f-desc'].forEach(id=>document.getElementById(id).value='');
+  renderIpRow();document.getElementById('add-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('f-title').focus(),200);
+}
+function renderIpRow(){
+  document.getElementById('ip-row').innerHTML=G.modalImgs.map((s,i)=>`
+    <div class="ip-wrap"><img class="ip-thumb" src="${s}"><div class="ip-rm" onclick="G.modalImgs.splice(${i},1);renderIpRow()">✕</div></div>
+  `).join('')+`<button class="ip-add" onclick="document.getElementById('modal-img').click()">+</button><input type="file" id="modal-img" style="display:none" accept="image/*" multiple onchange="previewImgs(this)">`;
+}
+function previewImgs(inp){Array.from(inp.files).forEach(f=>{const r=new FileReader();r.onload=e=>{G.modalImgs.push(e.target.result);renderIpRow();};r.readAsDataURL(f);});}
+function saveTrack(){
+  const title=document.getElementById('f-title').value.trim();
+  if(!title){document.getElementById('f-title').style.borderColor='#ef4444';document.getElementById('f-title').focus();return;}
+  G.tracks[G.addCol].push({id:G.nextId++,title,emoji:document.getElementById('f-emoji').value.trim()||'🎵',dur:document.getElementById('f-dur').value.trim()||'—',priority:document.getElementById('f-pri').value,tag:document.getElementById('f-tag').value.trim(),desc:document.getElementById('f-desc').value.trim(),imgs:[...G.modalImgs]});
+  closeM('add-modal');renderKanban();updateProgress();playSparkle();showNotif('Track added! 🎵');
+}
+
+// ═══ ATTACHMENTS ═══
+function addAtts(inp){Array.from(inp.files).forEach(f=>{const r=new FileReader();r.onload=e=>{G.atts.push(e.target.result);renderAtts();};r.readAsDataURL(f);});}
+function renderAtts(){
+  document.getElementById('att-g').innerHTML=G.atts.map(s=>`<img class="att-i" src="${s}" onclick="openLb('${s}')">`).join('')+`<button class="att-addbtn" onclick="document.getElementById('att-file').click()">+</button><input type="file" id="att-file" style="display:none" accept="image/*" multiple onchange="addAtts(this)">`;
+}
+
+// ═══ LIGHTBOX ═══
+function openLb(src){document.getElementById('lb-img').src=src;document.getElementById('lb').classList.add('open');}
+
+// ═══ PLAY DAY (opens Spotify + starts timer) ═══
+function triggerPlay(){
+  G.playing=!G.playing;
+  document.getElementById('play-icon').textContent=G.playing?'⏸':'▶';
+  document.getElementById('play-txt').textContent=G.playing?'PAUSE DAY':'PLAY DAY';
+  document.getElementById('tb-play-btn').textContent=G.playing?'⏸ Pause Day':'▶ Play Day';
+  document.getElementById('ch-rl').classList.toggle('spin',G.playing);
+  document.getElementById('ch-rr').classList.toggle('spin',G.playing);
+  document.getElementById('tb-eq').style.display=G.playing?'flex':'none';
+  document.getElementById('sp-eq').style.display=G.playing?'inline-flex':'none';
+  if(G.playing){
+    playCassetteInsert();
+    // Auto-start timer
+    if(!G.timerOn)toggleTimer();
+    showNotif(`▶ ${DAYS[G.day].name} tape is playing! 🎧`);
+  } else {
+    if(G.timerOn)toggleTimer();
+    playEject();showNotif('⏸ Day paused');
+  }
+}
+
+// ═══ WALKMAN TIMER ═══
+function setMode(btn,mins,label){
+  document.querySelectorAll('.modet').forEach(b=>b.classList.remove('on'));btn.classList.add('on');
+  G.timerMode=mins;
+  document.getElementById('wk-marquee').textContent=`◀◀ TASKTAPE FOCUS · ${label} · ${mins}:00 ▶▶`;
+  resetTimer();
+}
+function toggleTimer(){
+  if(G.timerOn){
+    clearInterval(G.timerInterval);G.timerOn=false;
+    document.getElementById('wk-play-btn').textContent='▶';
+    document.getElementById('wkrl').classList.remove('spin');document.getElementById('wkrr').classList.remove('spin');
+  } else {
+    G.timerOn=true;document.getElementById('wk-play-btn').textContent='⏸';
+    document.getElementById('wkrl').classList.add('spin');document.getElementById('wkrr').classList.add('spin');
+    G.timerInterval=setInterval(()=>{
+      G.timerSecs--;
+      if(G.timerSecs<=0){
+        clearInterval(G.timerInterval);G.timerOn=false;G.timerSecs=0;
+        document.getElementById('wk-play-btn').textContent='▶';
+        document.getElementById('wkrl').classList.remove('spin');document.getElementById('wkrr').classList.remove('spin');
+        playSparkle();showNotif('🎉 Pomodoro complete! Take a break.');
+      }
+      renderTimer();
+    },1000);
+  }
+}
+function resetTimer(){
+  clearInterval(G.timerInterval);G.timerOn=false;G.timerSecs=G.timerMode*60;
+  document.getElementById('wk-play-btn').textContent='▶';
+  document.getElementById('wkrl').classList.remove('spin');document.getElementById('wkrr').classList.remove('spin');
+  renderTimer();
+}
+function renderTimer(){
+  const m=Math.floor(G.timerSecs/60).toString().padStart(2,'0'),s=(G.timerSecs%60).toString().padStart(2,'0');
+  document.getElementById('wk-time').textContent=`${m}:${s}`;
+  document.getElementById('wk-sfill').style.width=`${((G.timerMode*60-G.timerSecs)/(G.timerMode*60))*100}%`;
+}
+
+// ═══ MOOD / VIBE ═══
+function pickMood(el,mood){document.querySelectorAll('.mb').forEach(b=>b.classList.remove('on'));el.classList.add('on');showNotif(`Vibe set: ${mood} 💫`);}
+function pickVibe(el){document.querySelectorAll('.vb').forEach(b=>b.classList.remove('on'));el.classList.add('on');}
+
+// ═══ AI ═══
+function sendAI(){
+  const inp=document.getElementById('ai-inp'),msg=inp.value.trim();if(!msg)return;
+  const box=document.getElementById('ai-msgs');
+  const u=document.createElement('div');u.className='ai-m u';u.textContent=msg;box.appendChild(u);inp.value='';
+  const t=document.createElement('div');t.className='ai-m a';t.innerHTML='<em style="opacity:.5">🎧 Remixing your day...</em>';
+  box.appendChild(t);box.scrollTop=box.scrollHeight;
+  setTimeout(()=>{
+    t.innerHTML=AI_RESP[Math.floor(Math.random()*AI_RESP.length)](msg).replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+    box.scrollTop=box.scrollHeight;
+  },1300);
+}
+
+// ═══ SETTINGS ═══
+function openSettings(){document.getElementById('settings-modal').classList.add('open');}
+function setAccent(c,el){document.querySelectorAll('.cdot').forEach(d=>d.classList.remove('on'));el.classList.add('on');document.documentElement.style.setProperty('--accent',c);showNotif('Accent updated! 🎨');}
+function setFont(f,el){document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('on'));el.classList.add('on');document.body.style.fontFamily=f;showNotif('Font updated! ✨');}
+
+// ═══ MODALS ═══
+function closeM(id){document.getElementById(id).classList.remove('open');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelectorAll('.mbg.open').forEach(m=>m.classList.remove('open'));document.getElementById('lb').classList.remove('open');}});
+
+// ═══ COMPLETE ═══
+function showComplete(){
+  const d=DAYS[G.day];
+  document.getElementById('co-tape-bg').style.background=`linear-gradient(160deg,${d.pastel},${d.color})`;
+  document.getElementById('co-dname').textContent=d.name.toUpperCase();
+  document.getElementById('co-title').textContent=`${d.name} Complete!`;
+  const cw=document.getElementById('conf-wrap');cw.innerHTML='';
+  const cc=['#a855f7','#ec4899','#fde68a','#6ee7b7','#93c5fd','#fdba74','#fca5a5','#fff'];
+  for(let i=0;i<18;i++){const cb=document.createElement('div');cb.className='confbit';cb.style.cssText=`width:${5+Math.random()*6}px;height:${5+Math.random()*6}px;background:${cc[i%cc.length]};left:${Math.random()*100}%;border-radius:${Math.random()>.5?'50%':'2px'};animation-duration:${1.4+Math.random()*.8}s;animation-delay:${Math.random()*1.2}s`;cw.appendChild(cb);}
+  document.getElementById('co').classList.add('open');
+  playEject();
+}
+function closeCo(){document.getElementById('co').classList.remove('open');}
+
+// ═══ NOTIF ═══
+let _nt=null;
+function showNotif(msg){clearTimeout(_nt);const n=document.getElementById('notif');document.getElementById('notif-txt').textContent=msg;n.classList.add('show');_nt=setTimeout(()=>n.classList.remove('show'),2800);}
+
+// ═══ INIT ═══
+renderTimer();
+</script>
+</body>
+</html>
